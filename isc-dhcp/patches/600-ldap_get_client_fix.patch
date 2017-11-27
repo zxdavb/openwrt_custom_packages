@@ -1,0 +1,65 @@
+--- a/server/ldap.c
++++ b/server/ldap.c
+@@ -2943,6 +2943,36 @@ find_subclass_in_ldap (struct class *cla
+   return (0);
+ }
+ 
++/*
++ *  * Get the client identifier from the packet.
++ *   */
++isc_result_t
++get_client_id_manni(struct packet *packet, struct data_string *client_id) {
++        struct option_cache *oc;
++
++        /*
++	 *          * Verify our client_id structure is empty.
++	 *                   */
++        if ((client_id->data != NULL) || (client_id->len != 0)) {
++                return DHCP_R_INVALIDARG;
++        }
++
++        oc = lookup_option(&dhcpv6_universe, packet->options, D6O_CLIENTID);
++        if (oc == NULL) {
++                return ISC_R_NOTFOUND;
++        }
++
++        if (!evaluate_option_cache(client_id, packet, NULL, NULL,
++                                   packet->options, NULL,
++	                           &global_scope, oc, MDL)) {
++		return ISC_R_FAILURE;
++        }
++
++        return ISC_R_SUCCESS;
++}
++
++
++
+ int find_client_in_ldap (struct host_decl **hp, struct packet *packet,
+                          struct option_state *state, const char *file, int line)
+ {
+@@ -2950,7 +2980,8 @@ int find_client_in_ldap (struct host_dec
+   ldap_dn_node *curr;
+   struct host_decl * host;
+   isc_result_t status;
+-  struct data_string client_id;
++  //struct data_string client_id;
++  struct data_string *client_id;
+   char buf[1024], buf1[1024];
+   int ret;
+ 
+@@ -2962,12 +2993,12 @@ int find_client_in_ldap (struct host_dec
+   if (ld == NULL)
+     return (0);
+ 
+-  memset(&client_id, 0, sizeof(client_id));
+-  if (get_client_id(packet, &client_id) != ISC_R_SUCCESS)
++  memset(client_id, 0, sizeof(*client_id));
++  if (get_client_id_manni(packet, client_id) != ISC_R_SUCCESS)
+     return (0);
+   snprintf(buf, sizeof(buf),
+            "(&(objectClass=dhcpHost)(dhcpClientId=%s))",
+-           print_hw_addr(0, client_id.len, client_id.data));
++           print_hw_addr(0, client_id->len, client_id->data));
+ 
+   /* log_info ("Searching LDAP for %s (%s)", buf, packet->interface->shared_network->name); */
+ 

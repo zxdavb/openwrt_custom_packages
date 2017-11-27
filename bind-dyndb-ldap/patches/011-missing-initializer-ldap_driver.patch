@@ -1,0 +1,30 @@
+--- a/src/ldap_driver.c
++++ b/src/ldap_driver.c
+@@ -823,6 +823,17 @@ nodefullname(dns_db_t *db, dns_dbnode_t
+ 	return dns_db_nodefullname(ldapdb->rbtdb, node, name);
+ }
+ 
++isc_result_t
++getsize(dns_db_t *db, dns_dbversion_t *version, isc_uint64_t *records,
++     isc_uint64_t *bytes)
++{
++	ldapdb_t *ldapdb = (ldapdb_t *) db;
++
++	REQUIRE(VALID_LDAPDB(ldapdb));
++
++	return dns_db_getsize(ldapdb->rbtdb, version, records, bytes);
++}
++
+ static dns_dbmethods_t ldapdb_methods = {
+ 	attach,
+ 	detach,
+@@ -867,7 +878,8 @@ static dns_dbmethods_t ldapdb_methods =
+ 	findext,
+ 	setcachestats,
+ 	hashsize,
+-	nodefullname
++	nodefullname,
++	getsize
+ };
+ 
+ isc_result_t ATTR_NONNULLS
