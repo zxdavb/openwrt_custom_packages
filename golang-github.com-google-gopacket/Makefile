@@ -1,0 +1,75 @@
+#
+# This software is licensed under the Public Domain.
+#
+
+include $(TOPDIR)/rules.mk
+
+PKG_NAME:=golang-github.com-google-gopacket
+PKG_VERSION:=1.1.14
+PKG_RELEASE:=1
+
+PKG_MAINTAINER:=Manfred Gschweidl <m.gschweidl@gmail.com>
+PKG_LICENSE_FILES:=LICENSE
+
+PKG_SOURCE:=v1.1.14.tar.gz
+PKG_SOURCE_URL:=https://github.com/google/gopacket/archive/
+PKG_HASH:=cb67f185cd2547652b9161829e82ebdeafc8984e827825647fd8d3f4e9f93250
+
+# Default:
+# PKG_BUILD_DIR:=$(BUILD_DIR)/$(PKG_NAME)-$(PKG_VERSION)
+# DUMP
+#DUMP:=1
+PKG_USE_GO:=1
+
+include $(INCLUDE_DIR)/package.mk
+
+#go_modules:=github.com/google/gopacket github.com/google/gopacket/layers \
+#	github.com/google/gopacket/pcap github.com/google/gopacket/pfring \
+#	github.com/google/gopacket/afpacket github.com/gopacket/tcpassembly
+
+go_modules:=github.com/google/gopacket github.com/google/gopacket/layers \
+	github.com/google/gopacket/pcap
+
+TAR_CMD:=$(HOST_TAR) -C $(PKG_BUILD_DIR) --strip-components 1 $(TAR_OPTIONS)
+
+define Package/golang-github.com-google-gopacket
+	SUBMENU:=Golang
+	SECTION:=lang
+	CATEGORY:=Languages
+	TITLE:=Golang gopacket V$(PKG_VERSION) library
+	URL:=https://github.com/google/gopacket
+	MAINTAINER:=Manfred Gschweidl <m.gschweidl@gmail.com>
+	DEPENDS:=+libpcap
+	#DEFAULT:=n
+endef
+
+define Package/golang-github.com-google-gopacket/description
+	Provides packet processing capabilities for Go - V$(PKG_VERSION)
+	* layers: You'll probably use this every time.  This contains of the logic
+	  built into gopacket for decoding packet protocols.  Note that all example
+	  code below assumes that you have imported both gopacket and
+	  gopacket/layers.
+	* pcap: C bindings to use libpcap to read packets off the wire.
+	* pfring: C bindings to use PF_RING to read packets off the wire.
+	* afpacket: C bindings for Linux's AF_PACKET to read packets off the wire.
+	* tcpassembly: TCP stream reassembly
+endef
+
+#define Build/Prepare
+#	$(call Build/GO/Prepare/Default)
+#endef
+
+define Build/Compile
+	$(call Build/GO/Compile/Default)
+endef
+
+define Build/InstallDev
+	$(call Build/GO/InstallDev/Default,$(1))
+endef
+
+define Package/golang-github.com-google-gopacket/install
+	$(call Package/GO/Install/Default,$(1))
+endef
+
+$(eval $(call BuildPackage,golang-github.com-google-gopacket))
+

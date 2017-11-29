@@ -25,10 +25,8 @@ GO_TOOLCHAIN_VARIANT=toolchain
 
 include $(INCLUDE_DIR)/package.mk
 
-GO_ARCHITECTURE_PACKAGE:=$(GOOS)_$(GOARCH)
-
 TAR_CMD:=$(HOST_TAR) -C $(PKG_BUILD_DIR) --strip-components 1 $(TAR_OPTIONS)
-PKG_CONFIG:="/usr/bin/pkg-config"
+GO_PKG_CONFIG:="/usr/bin/pkg-config"
 EXCLUDE_DEP_PATH:="*testdata*"
 RSTRIP:=:
 
@@ -47,15 +45,16 @@ define Package/golang/description
 	GO compiler and runtime package version $(PKG_VERSION)
 endef
 
+# GO_GCFLAGS=$(GO_GCFLAGS) GO_LDFLAGS=$(GO_LDFLAGS)
 define Build/Compile
 	(cd $(PKG_BUILD_DIR)/src && \
-	GOROOT_BOOTSTRAP=$(GOROOT_TOOLCHAIN_FINAL) GOARCH=$(GOARCH) GOOS=$(GOOS) \
+	GOROOT_BOOTSTRAP=$(GOROOT_TOOLCHAIN_FINAL) GOARCH=$(GO_GOARCH) GOOS=$(GO_GOOS) \
 		GOROOT_FINAL=/usr/lib/$(PKG_NAME)-$(PKG_VERSION) \
-		$(if $(GOMIPS),GOMIPS=$(GOMIPS)) \
-		$(if $(GOARM),GOARM=$(GOARM)) \
-		$(if $(GO386),GO386=$(GO386)) \
+		$(if $(GO_GOMIPS),GOMIPS=$(GO_GOMIPS)) \
+		$(if $(GO_GOARM),GOARM=$(GO_GOARM)) \
+		$(if $(GO_GO386),GO386=$(GO_GO386)) \
 		CGO_ENABLED="$(GO_CGO_ENABLED)" \
-		PKG_CONFIG=$(PKG_CONFIG) \
+		PKG_CONFIG=$(GO_PKG_CONFIG) \
 		$(if $(CONFIG_EXTRA_GO_CONFIG_OPTION),GO_DISTFLAGS=$(CONFIG_EXTRA_GO_CONFIG_OPTION)) \
 		CC="$(GO_CC)" CXX="$(GO_CXX)" \
 		CC_FOR_TARGET="$(GO_CC_FOR_TARGET)" CXX_FOR_TARGET="$(GO_CXX_FOR_TARGET)" \
@@ -73,6 +72,9 @@ define Build/InstallDev
 
 	$(INSTALL_DIR) $(1)/usr/lib/$(PKG_NAME)-$(PKG_VERSION)/pkg/obj/$(GO_ARCHITECTURE_PACKAGE)
 	ln -srf $(1)/usr/lib/$(PKG_NAME)-$(PKG_VERSION) $(1)/$(GOROOT_TARGET_FINAL)
+	$(INSTALL_DIR) $(1)/$(GO_ADDITIONAL_PACKAGES)/bin
+	$(INSTALL_DIR) $(1)/$(GO_ADDITIONAL_PACKAGES)/pkg/$(GO_ARCHITECTURE_PACKAGE)
+	$(INSTALL_DIR) $(1)/$(GO_ADDITIONAL_PACKAGES)/src
 endef
 
 define Package/golang/install
@@ -105,6 +107,9 @@ endif
 	$(INSTALL_DIR) $(1)/usr/bin
 	ln -srf $(1)/$(GOROOT_TARGET_FINAL)/bin/go $(1)/usr/bin/go
 	ln -srf $(1)/$(GOROOT_TARGET_FINAL)/bin/gofmt $(1)/usr/bin/gofmt
+	$(INSTALL_DIR) $(1)/$(GO_ADDITIONAL_PACKAGES)/bin
+	$(INSTALL_DIR) $(1)/$(GO_ADDITIONAL_PACKAGES)/pkg/$(GO_ARCHITECTURE_PACKAGE)
+	$(INSTALL_DIR) $(1)/$(GO_ADDITIONAL_PACKAGES)/src
 endef
 
 define Package/golang/postrm
@@ -113,6 +118,7 @@ rm -f /usr/bin/go
 rm -f /usr/bin/gofmt
 rm -rf /usr/lib/go
 rm -rf /usr/lib/golang-1.8.5
+rm -rf $(GO_ADDITIONAL_PACKAGES)
 endef
 
 $(eval $(call BuildPackage,golang))
