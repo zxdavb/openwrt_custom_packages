@@ -46,7 +46,7 @@ CONFIGURE_ARGS += --with-protoc=$(STAGING_DIR_HOSTPKG)/bin/protoc
 define Build/InstallDev
 	$(INSTALL_DIR) \
 		$(1)/usr/lib \
-		$(1)/usr/include
+		$(1)/usr/include \
 
 	$(CP) \
 		$(PKG_INSTALL_DIR)/usr/include/* \
