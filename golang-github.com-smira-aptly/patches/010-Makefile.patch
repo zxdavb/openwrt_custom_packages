@@ -1,0 +1,11 @@
+--- a/Makefile
++++ b/Makefile
+@@ -44,7 +44,7 @@ check: system/env
+ 	. system/env/bin/activate && flake8 --max-line-length=200 --exclude=system/env/ system/
+ 
+ install:
+-	go install -v -ldflags "-X main.Version=$(VERSION)"
++	(cd $(GOPATH)/src/github.com/smira/aptly && go install -v -ldflags "-X main.Version=$(VERSION)")
+ 
+ system/env: system/requirements.txt
+ 	rm -rf system/env

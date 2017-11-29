@@ -1,0 +1,11 @@
+--- a/contrib/snort/Makefile
++++ b/contrib/snort/Makefile
+@@ -3,7 +3,7 @@
+ all: snortSkydive
+ 
+ snortSkydive: snortSkydive.go
+-	govendor build snortSkydive.go
++	$(GOPATH)/bin/govendor build snortSkydive.go
+ 
+ clean:
+ 	rm -f snortSkydive
