@@ -59,11 +59,11 @@ endef
 
 define Build/Compile
 	$(call copy_go_source)
-	(cd $(go_pkg_gopath)/src/$(go_pkg_import_path)/ && make install)
+	(cd $(GOPATH)/src/$(PKG_GO_IMPORT_PATH)/ && make install)
 endef
 
 define Build/InstallDev
-#	$(call Build/GO/InstallDev/Default,$(1))
+	$(call Build/GO/InstallDev/Default,$(1))
 endef
 
 define Package/golang-github.com-smira-aptly/install
