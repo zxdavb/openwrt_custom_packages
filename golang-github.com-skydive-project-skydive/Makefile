@@ -56,6 +56,7 @@ endef
 define Build/Install
 	# Because a directory cannot be copied into itself (see package install)
 	$(CP) $(GOPATH)/src $(GOPATH)/src-temp
+	rm -f $(GOPATH)/src-temp/$(PKG_GO_IMPORT_PATH)/contrib/snort/snortSkydive
 endef
 
 define Build/InstallDev
