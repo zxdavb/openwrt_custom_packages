@@ -49,7 +49,7 @@ endef
 define Build/Compile
 	(cd $(PKG_BUILD_DIR)/src && \
 	GOROOT_BOOTSTRAP=$(GOROOT_TOOLCHAIN_FINAL) GOARCH=$(GO_GOARCH) GOOS=$(GO_GOOS) \
-		GOROOT_FINAL=/usr/lib/$(PKG_NAME)-$(PKG_VERSION) \
+		GOROOT_FINAL="/usr/lib/$(PKG_NAME)-$(PKG_VERSION)" \
 		$(if $(GO_GOMIPS),GOMIPS=$(GO_GOMIPS)) \
 		$(if $(GO_GOARM),GOARM=$(GO_GOARM)) \
 		$(if $(GO_GO386),GO386=$(GO_GO386)) \
@@ -118,7 +118,7 @@ rm -f /usr/bin/go
 rm -f /usr/bin/gofmt
 rm -rf /usr/lib/go
 rm -rf /usr/lib/golang-1.8.5
-rm -rf $(GO_ADDITIONAL_PACKAGES)
+#rm -rf $(GO_ADDITIONAL_PACKAGES)
 endef
 
 $(eval $(call BuildPackage,golang))
