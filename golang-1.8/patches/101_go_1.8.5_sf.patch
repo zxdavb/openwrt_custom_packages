@@ -1,0 +1,976 @@
+// -----------------------------------------------------------------------------
+// To build softfloat enabled go binary, apply this patch to go1.8.3 source tree.
+//
+// $ patch -p1 <this file>
+//
+// And then, build like below.
+//
+// $ cd src
+// $ GOROOT_BOOTSTRAP=<your_GOROOT> GOOS=linux GOARCH=misp GOMIPS=softfloat ./make.bash
+//
+// That's it.
+//
+// Original author:   Vladimir Stefanovic
+// go1.8.3 back port: Eiji Matsumoto
+// Sun 30 Jul 2017 01:44:05 PM JST
+//
+// -----------------------------------------------------------------------------
+diff --git a/VERSION b/VERSION
+index 3e144cd980..bbce1d5fa6 100644
+--- a/VERSION
++++ b/VERSION
+@@ -1 +1 @@
+-go1.8.5
+\ No newline at end of file
++go1.8.5sf
+diff --git a/src/cmd/compile/internal/gc/go.go b/src/cmd/compile/internal/gc/go.go
+index a529ca40f7..3a7b14f892 100644
+--- a/src/cmd/compile/internal/gc/go.go
++++ b/src/cmd/compile/internal/gc/go.go
+@@ -348,9 +348,10 @@ type Arch struct {
+ 	REGSP    int
+ 	MAXWIDTH int64
+ 
+-	Defframe func(*obj.Prog)
+-	Proginfo func(*obj.Prog) ProgInfo
+-	Use387   bool // should 8g use 387 FP instructions instead of sse2.
++	Defframe  func(*obj.Prog)
++	Proginfo  func(*obj.Prog) ProgInfo
++	Use387    bool // should 8g use 387 FP instructions instead of sse2.
++	SoftFloat bool
+ 
+ 	// SSAMarkMoves marks any MOVXconst ops that need to avoid clobbering flags.
+ 	SSAMarkMoves func(*SSAGenState, *ssa.Block)
+diff --git a/src/cmd/compile/internal/gc/main.go b/src/cmd/compile/internal/gc/main.go
+index 1690944b3d..77b71f1d5d 100644
+--- a/src/cmd/compile/internal/gc/main.go
++++ b/src/cmd/compile/internal/gc/main.go
+@@ -30,12 +30,13 @@ var (
+ )
+ 
+ var (
+-	Debug_append   int
+-	Debug_closure  int
+-	debug_dclstack int
+-	Debug_panic    int
+-	Debug_slice    int
+-	Debug_wb       int
++	Debug_append    int
++	Debug_closure   int
++	debug_dclstack  int
++	Debug_panic     int
++	Debug_slice     int
++	Debug_wb        int
++	Debug_softfloat int
+ )
+ 
+ // Debug arguments.
+@@ -56,6 +57,7 @@ var debugtab = []struct {
+ 	{"slice", &Debug_slice},           // print information about slice compilation
+ 	{"typeassert", &Debug_typeassert}, // print information about type assertion inlining
+ 	{"wb", &Debug_wb},                 // print information about write barriers
++	{"softfloat", &Debug_softfloat},   // print information about softfloat
+ 	{"export", &Debug_export},         // print export data
+ }
+ 
+@@ -284,6 +286,10 @@ func Main() {
+ 		}
+ 	}
+ 
++	if Debug_softfloat != 0 {
++		Thearch.SoftFloat = true
++	}
++
+ 	// enable inlining.  for now:
+ 	//	default: inlining on.  (debug['l'] == 1)
+ 	//	-l: inlining off  (debug['l'] == 0)
+diff --git a/src/cmd/compile/internal/gc/opnames.go b/src/cmd/compile/internal/gc/opnames.go
+index bd56506e4d..01faaf827e 100644
+--- a/src/cmd/compile/internal/gc/opnames.go
++++ b/src/cmd/compile/internal/gc/opnames.go
+@@ -163,7 +163,6 @@ var opnames = []string{
+ 	ORETJMP:          "RETJMP",
+ 	OPS:              "PS",
+ 	OPC:              "PC",
+-	OSQRT:            "SQRT",
+ 	OGETG:            "GETG",
+ 	OEND:             "END",
+ }
+diff --git a/src/cmd/compile/internal/gc/racewalk.go b/src/cmd/compile/internal/gc/racewalk.go
+index bfb82b91b2..21458ecccc 100644
+--- a/src/cmd/compile/internal/gc/racewalk.go
++++ b/src/cmd/compile/internal/gc/racewalk.go
+@@ -186,8 +186,7 @@ func instrumentnode(np **Node, init *Nodes, wr int, skip int) {
+ 		OPLUS,
+ 		OREAL,
+ 		OIMAG,
+-		OCOM,
+-		OSQRT:
++		OCOM:
+ 		instrumentnode(&n.Left, init, wr, 0)
+ 		goto ret
+ 
+diff --git a/src/cmd/compile/internal/gc/ssa.go b/src/cmd/compile/internal/gc/ssa.go
+index a0c1cf15b9..a668d1edc9 100644
+--- a/src/cmd/compile/internal/gc/ssa.go
++++ b/src/cmd/compile/internal/gc/ssa.go
+@@ -26,6 +26,7 @@ func initssa() *ssa.Config {
+ 		if Thearch.LinkArch.Name == "386" {
+ 			ssaConfig.Set387(Thearch.Use387)
+ 		}
++		ssaConfig.SoftFloat = Thearch.SoftFloat
+ 	}
+ 	ssaConfig.HTML = nil
+ 	return ssaConfig
+@@ -70,6 +71,7 @@ func buildssa(fn *Node) *ssa.Func {
+ 	s.exitCode = fn.Func.Exit
+ 	s.panics = map[funcLine]*ssa.Block{}
+ 	s.config.DebugTest = s.config.DebugHashMatch("GOSSAHASH", name)
++	s.softFloat = s.config.SoftFloat
+ 
+ 	if name == os.Getenv("GOSSAFUNC") {
+ 		// TODO: tempfile? it is handy to have the location
+@@ -246,6 +248,7 @@ type state struct {
+ 	cgoUnsafeArgs bool
+ 	noWB          bool
+ 	WBLineno      int32 // line number of first write barrier. 0=no write barriers
++	softFloat     bool
+ }
+ 
+ type funcLine struct {
+@@ -374,6 +377,11 @@ func (s *state) newValue0I(op ssa.Op, t ssa.Type, auxint int64) *ssa.Value {
+ 
+ // newValue1 adds a new value with one argument to the current block.
+ func (s *state) newValue1(op ssa.Op, t ssa.Type, arg *ssa.Value) *ssa.Value {
++	if s.softFloat {
++		if c, ok := s.sfcall(op, arg); ok {
++			return c
++		}
++	}
+ 	return s.curBlock.NewValue1(s.peekLine(), op, t, arg)
+ }
+ 
+@@ -389,6 +397,11 @@ func (s *state) newValue1I(op ssa.Op, t ssa.Type, aux int64, arg *ssa.Value) *ss
+ 
+ // newValue2 adds a new value with two arguments to the current block.
+ func (s *state) newValue2(op ssa.Op, t ssa.Type, arg0, arg1 *ssa.Value) *ssa.Value {
++	if s.softFloat {
++		if c, ok := s.sfcall(op, arg0, arg1); ok {
++			return c
++		}
++	}
+ 	return s.curBlock.NewValue2(s.peekLine(), op, t, arg0, arg1)
+ }
+ 
+@@ -958,9 +971,6 @@ func (s *state) stmt(n *Node) {
+ 		p := s.expr(n.Left)
+ 		s.nilCheck(p)
+ 
+-	case OSQRT:
+-		s.expr(n.Left)
+-
+ 	default:
+ 		s.Fatalf("unhandled stmt %v", n.Op)
+ 	}
+@@ -1210,8 +1220,6 @@ var opToSSA = map[opAndType]ssa.Op{
+ 	opAndType{OLROT, TUINT16}: ssa.OpLrot16,
+ 	opAndType{OLROT, TUINT32}: ssa.OpLrot32,
+ 	opAndType{OLROT, TUINT64}: ssa.OpLrot64,
+-
+-	opAndType{OSQRT, TFLOAT64}: ssa.OpSqrt,
+ }
+ 
+ func (s *state) concreteEtype(t *Type) EType {
+@@ -1663,18 +1671,18 @@ func (s *state) expr(n *Node) *ssa.Value {
+ 
+ 		if ft.IsFloat() || tt.IsFloat() {
+ 			conv, ok := fpConvOpToSSA[twoTypes{s.concreteEtype(ft), s.concreteEtype(tt)}]
+-			if s.config.IntSize == 4 && Thearch.LinkArch.Name != "amd64p32" && Thearch.LinkArch.Family != sys.MIPS {
++			if s.config.IntSize == 4 && Thearch.LinkArch.Name != "amd64p32" && Thearch.LinkArch.Family != sys.MIPS && !s.softFloat {
+ 				if conv1, ok1 := fpConvOpToSSA32[twoTypes{s.concreteEtype(ft), s.concreteEtype(tt)}]; ok1 {
+ 					conv = conv1
+ 				}
+ 			}
+-			if Thearch.LinkArch.Name == "arm64" {
++			if Thearch.LinkArch.Name == "arm64" || s.softFloat {
+ 				if conv1, ok1 := uint64fpConvOpToSSA[twoTypes{s.concreteEtype(ft), s.concreteEtype(tt)}]; ok1 {
+ 					conv = conv1
+ 				}
+ 			}
+ 
+-			if Thearch.LinkArch.Family == sys.MIPS {
++			if Thearch.LinkArch.Family == sys.MIPS && !s.softFloat {
+ 				if ft.Size() == 4 && ft.IsInteger() && !ft.IsSigned() {
+ 					// tt is float32 or float64, and ft is also unsigned
+ 					if tt.Size() == 4 {
+@@ -1950,7 +1958,7 @@ func (s *state) expr(n *Node) *ssa.Value {
+ 				s.newValue1(negop, tp, s.newValue1(ssa.OpComplexImag, tp, a)))
+ 		}
+ 		return s.newValue1(s.ssaOp(n.Op, n.Type), a.Type, a)
+-	case ONOT, OCOM, OSQRT:
++	case ONOT, OCOM:
+ 		a := s.expr(n.Left)
+ 		return s.newValue1(s.ssaOp(n.Op, n.Type), a.Type, a)
+ 	case OIMAG, OREAL:
+@@ -2548,6 +2556,76 @@ const (
+ 	callGo
+ )
+ 
++type sfRtCallDef struct {
++	rtfn  *Node
++	rtype EType
++}
++
++var softFloatOps map[ssa.Op]sfRtCallDef
++
++func softfloatInit() {
++	softFloatOps = map[ssa.Op]sfRtCallDef{
++		ssa.OpAdd32F:	sfRtCallDef{Sysfunc("fadd32"), TFLOAT32},
++		ssa.OpAdd64F:	sfRtCallDef{Sysfunc("fadd64"), TFLOAT64},
++		ssa.OpSub32F:	sfRtCallDef{Sysfunc("fadd32"), TFLOAT32},
++		ssa.OpSub64F:	sfRtCallDef{Sysfunc("fadd64"), TFLOAT64},
++		ssa.OpMul32F:	sfRtCallDef{Sysfunc("fmul32"), TFLOAT32},
++		ssa.OpMul64F:	sfRtCallDef{Sysfunc("fmul64"), TFLOAT64},
++		ssa.OpDiv32F:	sfRtCallDef{Sysfunc("fdiv32"), TFLOAT32},
++		ssa.OpDiv64F:	sfRtCallDef{Sysfunc("fdiv64"), TFLOAT64},
++
++		ssa.OpEq64F:			sfRtCallDef{Sysfunc("feq64"), TBOOL},
++		ssa.OpEq32F:			sfRtCallDef{Sysfunc("feq32"), TBOOL},
++		ssa.OpNeq64F:			sfRtCallDef{Sysfunc("feq64"), TBOOL},
++		ssa.OpNeq32F:			sfRtCallDef{Sysfunc("feq32"), TBOOL},
++		ssa.OpLess64F:		sfRtCallDef{Sysfunc("fgt64"), TBOOL},
++		ssa.OpLess32F:		sfRtCallDef{Sysfunc("fgt32"), TBOOL},
++		ssa.OpGreater64F:	sfRtCallDef{Sysfunc("fgt64"), TBOOL},
++		ssa.OpGreater32F:	sfRtCallDef{Sysfunc("fgt32"), TBOOL},
++		ssa.OpLeq64F:			sfRtCallDef{Sysfunc("fge64"), TBOOL},
++		ssa.OpLeq32F:			sfRtCallDef{Sysfunc("fge32"), TBOOL},
++		ssa.OpGeq64F:			sfRtCallDef{Sysfunc("fge64"), TBOOL},
++		ssa.OpGeq32F:			sfRtCallDef{Sysfunc("fge32"), TBOOL},
++
++		ssa.OpCvt32to32F:		sfRtCallDef{Sysfunc("fint32to32"), TFLOAT32},
++		ssa.OpCvt32Fto32:		sfRtCallDef{Sysfunc("f32toint32"), TINT32},
++		ssa.OpCvt64to32F:		sfRtCallDef{Sysfunc("fint64to32"), TFLOAT32},
++		ssa.OpCvt32Fto64:		sfRtCallDef{Sysfunc("f32toint64"), TINT64},
++		ssa.OpCvt64Uto32F:	sfRtCallDef{Sysfunc("fuint64to32"), TFLOAT32},
++		ssa.OpCvt32Fto64U:	sfRtCallDef{Sysfunc("f32touint64"), TUINT64},
++		ssa.OpCvt32to64F:		sfRtCallDef{Sysfunc("fint32to64"), TFLOAT64},
++		ssa.OpCvt64Fto32:		sfRtCallDef{Sysfunc("f64toint32"), TINT32},
++		ssa.OpCvt64to64F:		sfRtCallDef{Sysfunc("fint64to64"), TFLOAT64},
++		ssa.OpCvt64Fto64:		sfRtCallDef{Sysfunc("f64toint64"), TINT64},
++		ssa.OpCvt64Uto64F:	sfRtCallDef{Sysfunc("fuint64to64"), TFLOAT64},
++		ssa.OpCvt64Fto64U:	sfRtCallDef{Sysfunc("f64touint64"), TUINT64},
++		ssa.OpCvt32Fto64F:	sfRtCallDef{Sysfunc("f32to64"), TFLOAT64},
++		ssa.OpCvt64Fto32F:	sfRtCallDef{Sysfunc("f64to32"), TFLOAT32},
++	}
++}
++
++// TODO: do not emit sfcall if operation can be optimized to constant in later opt phase
++func (s *state) sfcall(op ssa.Op, args ...*ssa.Value) (*ssa.Value, bool) {
++	if softFloatOps == nil {
++		softfloatInit()
++	}
++	if callDef, ok := softFloatOps[op]; ok {
++		switch op {
++		case ssa.OpLess32F, ssa.OpLess64F, ssa.OpLeq32F, ssa.OpLeq64F:
++			args[0], args[1] = args[1], args[0]
++		case ssa.OpSub32F, ssa.OpSub64F:
++			args[1] = s.newValue1(s.ssaOp(OMINUS, Types[callDef.rtype]), args[1].Type, args[1])
++		}
++
++		result := s.rtcall(callDef.rtfn, true, []*Type{Types[callDef.rtype]}, args...)[0]
++		if op == ssa.OpNeq32F || op == ssa.OpNeq64F {
++			result = s.newValue1(ssa.OpNot, result.Type, result)
++		}
++		return result, true
++	}
++	return nil, false
++}
++
+ // TODO: make this a field of a configuration object instead of a global.
+ var intrinsics *intrinsicInfo
+ 
+@@ -2825,6 +2903,9 @@ func findIntrinsic(sym *Sym) intrinsicBuilder {
+ 	if sym.Pkg == localpkg {
+ 		pkg = myimportpath
+ 	}
++	if Thearch.SoftFloat && pkg == "math" {
++		return nil
++	}
+ 	fn := sym.Name
+ 	f := intrinsics.std[intrinsicKey{pkg, fn}]
+ 	if f != nil {
+@@ -4801,8 +4882,18 @@ func (s *ssaExport) TypeUInt8() ssa.Type   { return Types[TUINT8] }
+ func (s *ssaExport) TypeUInt16() ssa.Type  { return Types[TUINT16] }
+ func (s *ssaExport) TypeUInt32() ssa.Type  { return Types[TUINT32] }
+ func (s *ssaExport) TypeUInt64() ssa.Type  { return Types[TUINT64] }
+-func (s *ssaExport) TypeFloat32() ssa.Type { return Types[TFLOAT32] }
+-func (s *ssaExport) TypeFloat64() ssa.Type { return Types[TFLOAT64] }
++func (s *ssaExport) TypeFloat32() ssa.Type {
++	if Thearch.SoftFloat {
++		return Types[TUINT32]
++	}
++	return Types[TFLOAT32]
++}
++func (s *ssaExport) TypeFloat64() ssa.Type {
++	if Thearch.SoftFloat {
++		return Types[TUINT64]
++	}
++	return Types[TFLOAT64]
++}
+ func (s *ssaExport) TypeInt() ssa.Type     { return Types[TINT] }
+ func (s *ssaExport) TypeUintptr() ssa.Type { return Types[TUINTPTR] }
+ func (s *ssaExport) TypeString() ssa.Type  { return Types[TSTRING] }
+diff --git a/src/cmd/compile/internal/gc/subr.go b/src/cmd/compile/internal/gc/subr.go
+index 7d008dfa65..ac98ec48ed 100644
+--- a/src/cmd/compile/internal/gc/subr.go
++++ b/src/cmd/compile/internal/gc/subr.go
+@@ -1190,6 +1190,23 @@ func ullmancalc(n *Node) {
+ 		// before we start marshaling args for a call. See issue 16760.
+ 		ul = UINF
+ 		goto out
++
++	// These ops might be rewritten to method calls when using soft-float se we ensure they are evaluated first.
++	case OADD, OSUB, OMINUS:
++		if Thearch.SoftFloat && (isFloat[n.Type.Etype] || isComplex[n.Type.Etype]) {
++			ul = UINF
++			goto out
++		}
++	case OLT, OEQ, ONE, OLE, OGE, OGT:
++		if Thearch.SoftFloat && (isFloat[n.Left.Type.Etype] || isComplex[n.Left.Type.Etype]) {
++			ul = UINF
++			goto out
++		}
++	case OCONV:
++		if Thearch.SoftFloat && ((isFloat[n.Type.Etype] || isComplex[n.Type.Etype]) || (isFloat[n.Left.Type.Etype] || isComplex[n.Left.Type.Etype])) {
++			ul = UINF
++			goto out
++		}
+ 	}
+ 
+ 	ul = 1
+diff --git a/src/cmd/compile/internal/gc/syntax.go b/src/cmd/compile/internal/gc/syntax.go
+index 8848bb5955..cd9ee2bc1f 100644
+--- a/src/cmd/compile/internal/gc/syntax.go
++++ b/src/cmd/compile/internal/gc/syntax.go
+@@ -499,7 +499,6 @@ const (
+ 	ORETJMP // return to other function
+ 	OPS     // compare parity set (for x86 NaN check)
+ 	OPC     // compare parity clear (for x86 NaN check)
+-	OSQRT   // sqrt(float64), on systems that have hw support
+ 	OGETG   // runtime.getg() (read g pointer)
+ 
+ 	OEND
+diff --git a/src/cmd/compile/internal/gc/walk.go b/src/cmd/compile/internal/gc/walk.go
+index d080d21066..8bf7b46c8e 100644
+--- a/src/cmd/compile/internal/gc/walk.go
++++ b/src/cmd/compile/internal/gc/walk.go
+@@ -652,16 +652,6 @@ opswitch:
+ 		n.Left = walkexpr(n.Left, init)
+ 		walkexprlist(n.List.Slice(), init)
+ 
+-		if n.Left.Op == ONAME && n.Left.Sym.Name == "Sqrt" &&
+-			(n.Left.Sym.Pkg.Path == "math" || n.Left.Sym.Pkg == localpkg && myimportpath == "math") {
+-			if Thearch.LinkArch.InFamily(sys.AMD64, sys.ARM, sys.ARM64, sys.MIPS, sys.PPC64, sys.S390X) {
+-				n.Op = OSQRT
+-				n.Left = n.List.First()
+-				n.List.Set(nil)
+-				break opswitch
+-			}
+-		}
+-
+ 		ll := ascompatte(n.Op, n, n.Isddd, t.Params(), n.List.Slice(), 0, init)
+ 		n.List.Set(reorder1(ll))
+ 
+@@ -990,6 +980,9 @@ opswitch:
+ 		n = walkexpr(n, init)
+ 
+ 	case OCONV, OCONVNOP:
++		if Thearch.SoftFloat {
++			goto oconv_walkexpr
++		}
+ 		if Thearch.LinkArch.Family == sys.ARM || Thearch.LinkArch.Family == sys.MIPS {
+ 			if n.Left.Type.IsFloat() {
+ 				if n.Type.Etype == TINT64 {
+@@ -1049,6 +1042,7 @@ opswitch:
+ 			}
+ 		}
+ 
++	oconv_walkexpr:
+ 		n.Left = walkexpr(n.Left, init)
+ 
+ 	case OANDNOT:
+diff --git a/src/cmd/compile/internal/mips/galign.go b/src/cmd/compile/internal/mips/galign.go
+index e6d117a806..272009e41d 100644
+--- a/src/cmd/compile/internal/mips/galign.go
++++ b/src/cmd/compile/internal/mips/galign.go
+@@ -9,6 +9,7 @@ import (
+ 	"cmd/compile/internal/ssa"
+ 	"cmd/internal/obj"
+ 	"cmd/internal/obj/mips"
++	"strings"
+ )
+ 
+ func Init() {
+@@ -18,6 +19,7 @@ func Init() {
+ 	}
+ 	gc.Thearch.REGSP = mips.REGSP
+ 	gc.Thearch.MAXWIDTH = (1 << 31) - 1
++	gc.Thearch.SoftFloat = strings.Contains(obj.GOMIPS, "softfloat")
+ 	gc.Thearch.Defframe = defframe
+ 	gc.Thearch.Proginfo = proginfo
+ 	gc.Thearch.SSAMarkMoves = func(s *gc.SSAGenState, b *ssa.Block) {}
+diff --git a/src/cmd/compile/internal/ssa/check.go b/src/cmd/compile/internal/ssa/check.go
+index d6d39aee76..de9562c007 100644
+--- a/src/cmd/compile/internal/ssa/check.go
++++ b/src/cmd/compile/internal/ssa/check.go
+@@ -201,6 +201,10 @@ func checkFunc(f *Func) {
+ 				}
+ 			}
+ 
++			if f.RegAlloc != nil && f.Config.SoftFloat && v.Type.IsFloat() {
++				f.Fatalf("unexpected floating-point type %v", v.LongString())
++			}
++
+ 			// TODO: check for cycles in values
+ 			// TODO: check type
+ 		}
+diff --git a/src/cmd/compile/internal/ssa/compile.go b/src/cmd/compile/internal/ssa/compile.go
+index 5b461bac48..95a8761c06 100644
+--- a/src/cmd/compile/internal/ssa/compile.go
++++ b/src/cmd/compile/internal/ssa/compile.go
+@@ -344,6 +344,7 @@ var passes = [...]pass{
+ 	{name: "loopbce", fn: loopbce},
+ 	{name: "decompose builtin", fn: decomposeBuiltIn, required: true},
+ 	{name: "dec", fn: dec, required: true},
++	{name: "softfloat", fn: softfloat, required: true},
+ 	{name: "late opt", fn: opt, required: true}, // TODO: split required rules and optimizing rules
+ 	{name: "generic deadcode", fn: deadcode},
+ 	{name: "check bce", fn: checkbce},
+@@ -411,6 +412,8 @@ var passOrder = [...]constraint{
+ 	{"generic deadcode", "check bce"},
+ 	// don't run optimization pass until we've decomposed builtin objects
+ 	{"decompose builtin", "late opt"},
++	// dec is the last pass that may introduce new float ops, so run softfloat after it
++	{"dec", "softfloat"},
+ 	// don't layout blocks until critical edges have been removed
+ 	{"critical", "layout"},
+ 	// regalloc requires the removal of all critical edges
+diff --git a/src/cmd/compile/internal/ssa/config.go b/src/cmd/compile/internal/ssa/config.go
+index 4931da8d07..d8e9b44f9f 100644
+--- a/src/cmd/compile/internal/ssa/config.go
++++ b/src/cmd/compile/internal/ssa/config.go
+@@ -35,6 +35,7 @@ type Config struct {
+ 	nacl            bool                       // GOOS=nacl
+ 	use387          bool                       // GO386=387
+ 	OldArch         bool                       // True for older versions of architecture, e.g. true for PPC64BE, false for PPC64LE
++	SoftFloat       bool                       // SoftFloat flag
+ 	NeedsFpScratch  bool                       // No direct move between GP and FP register sets
+ 	BigEndian       bool                       //
+ 	DebugTest       bool                       // default true unless $GOSSAHASH != ""; as a debugging aid, make new code conditional on this and use GOSSAHASH to binary search for failing cases
+diff --git a/src/cmd/compile/internal/ssa/softfloat.go b/src/cmd/compile/internal/ssa/softfloat.go
+new file mode 100644
+index 0000000000..41cf536302
+--- /dev/null
++++ b/src/cmd/compile/internal/ssa/softfloat.go
+@@ -0,0 +1,60 @@
++// Copyright 2017 The Go Authors. All rights reserved.
++// Use of this source code is governed by a BSD-style
++// license that can be found in the LICENSE file.
++
++package ssa
++
++import "math"
++
++func softfloat(f *Func) {
++	if !f.Config.SoftFloat {
++		return
++	}
++	newInt64 := false
++
++	for _, b := range f.Blocks {
++		for _, v := range b.Values {
++			if v.Type.IsFloat() {
++				switch v.Op {
++				case OpPhi, OpLoad, OpArg, OpComplexReal, OpComplexImag:
++					if v.Type.Size() == 4 {
++						v.Type = f.Config.fe.TypeUInt32()
++					} else {
++						v.Type = f.Config.fe.TypeUInt64()
++					}
++				case OpConst32F:
++					v.Op = OpConst32
++					v.Type = f.Config.fe.TypeUInt32()
++					v.AuxInt = int64(int32(math.Float32bits(i2f32(v.AuxInt))))
++				case OpConst64F:
++					v.Op = OpConst64
++					v.Type = f.Config.fe.TypeUInt64()
++				case OpNeg32F:
++					arg0 := v.Args[0]
++					v.reset(OpXor32)
++					v.Type = f.Config.fe.TypeUInt32()
++					v.AddArg(arg0)
++					mask := v.Block.NewValue0(v.Line, OpConst32, v.Type)
++					mask.AuxInt = -0x80000000
++					v.AddArg(mask)
++				case OpNeg64F:
++					arg0 := v.Args[0]
++					v.reset(OpXor64)
++					v.Type = f.Config.fe.TypeUInt64()
++					v.AddArg(arg0)
++					mask := v.Block.NewValue0(v.Line, OpConst64, v.Type)
++					mask.AuxInt = -0x8000000000000000
++					v.AddArg(mask)
++				}
++				newInt64 = newInt64 || v.Type.Size() == 8
++			}
++		}
++	}
++
++	if newInt64 && f.Config.IntSize == 4 {
++		// On 32bit arch, decompose Uint64 introduced in the switch above.
++		decomposeBuiltIn(f)
++		applyRewrite(f, rewriteBlockdec64, rewriteValuedec64)
++	}
++
++}
+diff --git a/src/cmd/dist/build.go b/src/cmd/dist/build.go
+index 4d0b1a0b41..251cba4644 100644
+--- a/src/cmd/dist/build.go
++++ b/src/cmd/dist/build.go
+@@ -28,6 +28,7 @@ var (
+ 	goos                   string
+ 	goarm                  string
+ 	go386                  string
++	gomips                 string
+ 	goroot                 string
+ 	goroot_final           string
+ 	goextlinkenabled       string
+@@ -138,6 +139,12 @@ func xinit() {
+ 	}
+ 	go386 = b
+ 
++	b = os.Getenv("GOMIPS")
++	if b == "" {
++		b = "r1"
++	}
++	gomips = b
++
+ 	p := pathf("%s/src/all.bash", goroot)
+ 	if !isfile(p) {
+ 		fatal("$GOROOT is not set correctly or not exported\n"+
+@@ -224,6 +231,7 @@ func xinit() {
+ 	os.Setenv("GOHOSTARCH", gohostarch)
+ 	os.Setenv("GOHOSTOS", gohostos)
+ 	os.Setenv("GOOS", goos)
++	os.Setenv("GOMIPS", gomips)
+ 	os.Setenv("GOROOT", goroot)
+ 	os.Setenv("GOROOT_FINAL", goroot_final)
+ 
+@@ -729,6 +737,14 @@ func install(dir string) {
+ 			"-D", "GOOS_GOARCH_" + goos + "_" + goarch,
+ 		}
+ 
++		if goarch == "mips" || goarch == "mipsle" {
++			// Define GOMIPS_softfloat, GOMIPS_rN from gomips value.
++			if strings.Contains(gomips, "softfloat") {
++				compile = append(compile, "-D", "GOMIPS_softfloat")
++			}
++			compile = append(compile, "-D", "GOMIPS_"+strings.TrimSuffix(gomips, "softfloat"))
++		}
++
+ 		doclean := true
+ 		b := pathf("%s/%s", workdir, filepath.Base(p))
+ 
+@@ -995,6 +1011,9 @@ func cmdenv() {
+ 	if goarch == "386" {
+ 		xprintf(format, "GO386", go386)
+ 	}
++	if goarch == "mips" || goarch == "mipsle" {
++		xprintf(format, "GOMIPS", gomips)
++	}
+ 
+ 	if *path {
+ 		sep := ":"
+diff --git a/src/cmd/dist/buildruntime.go b/src/cmd/dist/buildruntime.go
+index d696beb5b3..ce006e5c2f 100644
+--- a/src/cmd/dist/buildruntime.go
++++ b/src/cmd/dist/buildruntime.go
+@@ -43,6 +43,7 @@ func mkzversion(dir, file string) {
+ //	const defaultGOROOT = <goroot>
+ //	const defaultGO386 = <go386>
+ //	const defaultGOARM = <goarm>
++//	const defaultGOMIPS = <gomips>
+ //	const defaultGOOS = runtime.GOOS
+ //	const defaultGOARCH = runtime.GOARCH
+ //	const defaultGO_EXTLINK_ENABLED = <goextlinkenabled>
+@@ -70,13 +71,14 @@ func mkzbootstrap(file string) {
+ 			"const defaultGOROOT = `%s`\n"+
+ 			"const defaultGO386 = `%s`\n"+
+ 			"const defaultGOARM = `%s`\n"+
++			"const defaultGOMIPS = `%s`\n"+
+ 			"const defaultGOOS = runtime.GOOS\n"+
+ 			"const defaultGOARCH = runtime.GOARCH\n"+
+ 			"const defaultGO_EXTLINK_ENABLED = `%s`\n"+
+ 			"const version = `%s`\n"+
+ 			"const stackGuardMultiplier = %d\n"+
+ 			"const goexperiment = `%s`\n",
+-		goroot_final, go386, goarm, goextlinkenabled, findgoversion(), stackGuardMultiplier(), os.Getenv("GOEXPERIMENT"))
++		goroot_final, go386, goarm, gomips, goextlinkenabled, findgoversion(), stackGuardMultiplier(), os.Getenv("GOEXPERIMENT"))
+ 
+ 	writefile(out, file, writeSkipSame)
+ }
+diff --git a/src/cmd/dist/test.go b/src/cmd/dist/test.go
+index c51dcead2b..bf1b30f5f7 100644
+--- a/src/cmd/dist/test.go
++++ b/src/cmd/dist/test.go
+@@ -600,6 +600,16 @@ func (t *tester) registerTests() {
+ 			})
+ 		}
+ 	}
++	if !t.compileOnly && t.goos != "android" && !t.iOS() {
++		t.tests = append(t.tests, distTest{
++			name:    "softfloat",
++			heading: "softfloat math",
++			fn: func(dt *distTest) error {
++				t.addCmd(dt, "src", "go", "test", "-a", "-short", t.timeout(300), t.tags(), "math", "-gcflags=-d=softfloat,ssa/check/on", "-installsuffix=softfloat")
++			return nil
++			},
++		})
++	}
+ 	if t.goos != "nacl" && t.goos != "android" && !t.iOS() {
+ 		t.tests = append(t.tests, distTest{
+ 			name:    "api",
+diff --git a/src/cmd/go/alldocs.go b/src/cmd/go/alldocs.go
+index 3d5dd2b397..a52cfc6b56 100644
+--- a/src/cmd/go/alldocs.go
++++ b/src/cmd/go/alldocs.go
+@@ -1127,6 +1127,10 @@
+ // 	GO386
+ // 		For GOARCH=386, the floating point instruction set.
+ // 		Valid values are 387, sse2.
++//	GOMIPS
++//		For GOARCH=mips{,le}, the MIPS instruction set for which to compile and
++//		whether the target has FPU.
++//		Valid values are r1, r2, r1softfloat, r2softfloat, softfloat.
+ //
+ // Special-purpose environment variables:
+ //
+diff --git a/src/cmd/go/build.go b/src/cmd/go/build.go
+index cad578daed..1025a9510e 100644
+--- a/src/cmd/go/build.go
++++ b/src/cmd/go/build.go
+@@ -2413,6 +2413,13 @@ func (gcToolchain) asm(b *builder, p *Package, obj string, sfiles []string) ([]s
+ 			}
+ 		}
+ 	}
++	if goarch == "mips" || goarch == "mipsle" {
++		// Define GOMIPS_softfloat, GOMIPS_rN from cfg.GOMIPS value.
++		if strings.Contains(os.Getenv("GOMIPS"), "softfloat") {
++			args = append(args, "-D", "GOMIPS_softfloat")
++		}
++		args = append(args, "-D", "GOMIPS_"+strings.TrimSuffix(os.Getenv("GOMIPS"), "softfloat"))
++	}
+ 	var ofiles []string
+ 	for _, sfile := range sfiles {
+ 		ofile := obj + sfile[:len(sfile)-len(".s")] + ".o"
+diff --git a/src/cmd/go/env.go b/src/cmd/go/env.go
+index 31710b7e6d..95594508a7 100644
+--- a/src/cmd/go/env.go
++++ b/src/cmd/go/env.go
+@@ -60,6 +60,8 @@ func mkEnv() []envVar {
+ 		env = append(env, envVar{"GOARM", os.Getenv("GOARM")})
+ 	case "386":
+ 		env = append(env, envVar{"GO386", os.Getenv("GO386")})
++	case "mips", "mipsle":
++		env = append(env, envVar{"GOMIPS", os.Getenv("GOMIPS")})
+ 	}
+ 
+ 	cmd := b.gccCmd(".")
+diff --git a/src/cmd/go/help.go b/src/cmd/go/help.go
+index 0c663ad463..f893caf659 100644
+--- a/src/cmd/go/help.go
++++ b/src/cmd/go/help.go
+@@ -492,6 +492,10 @@ Architecture-specific environment variables:
+ 	GO386
+ 		For GOARCH=386, the floating point instruction set.
+ 		Valid values are 387, sse2.
++	GOMIPS
++		For GOARCH=mips{,le}, the MIPS instruction set for which to compile and
++		whether the target has FPU.
++		Valid values are r1, r2, r1softfloat, r2softfloat, softfloat.
+ 
+ Special-purpose environment variables:
+ 
+diff --git a/src/cmd/internal/obj/util.go b/src/cmd/internal/obj/util.go
+index bc5d1c5d5a..ff7a78a4b5 100644
+--- a/src/cmd/internal/obj/util.go
++++ b/src/cmd/internal/obj/util.go
+@@ -37,6 +37,7 @@ var (
+ 	GOOS    = envOr("GOOS", defaultGOOS)
+ 	GO386   = envOr("GO386", defaultGO386)
+ 	GOARM   = goarm()
++	GOMIPS	= gomips()
+ 	Version = version
+ )
+ 
+@@ -54,6 +55,17 @@ func goarm() int {
+ 	panic("unreachable")
+ }
+ 
++func gomips() string {
++	switch v := envOr("GOMIPS", defaultGOMIPS); v {
++	case "softfloat":
++		return "r1softfloat"
++	case "r1", "r2", "r1softfloat", "r2softfloat":
++		return v
++	}
++	log.Fatalf("Invalid GOMIPS value. Must be r1, r2, r1softfloat, r2softfloat or softfloat.")
++	panic("unreachable")
++}
++
+ func Getgoextlinkenabled() string {
+ 	return envOr("GO_EXTLINK_ENABLED", defaultGO_EXTLINK_ENABLED)
+ }
+diff --git a/src/math/sqrt_mipsx.s b/src/math/sqrt_mipsx.s
+index 1b27d494b5..a63ea9ec9f 100644
+--- a/src/math/sqrt_mipsx.s
++++ b/src/math/sqrt_mipsx.s
+@@ -8,7 +8,11 @@
+ 
+ // func Sqrt(x float64) float64
+ TEXT ·Sqrt(SB),NOSPLIT,$0
++#ifdef GOMIPS_softfloat
++	JMP ·sqrt(SB)
++#else
+ 	MOVD	x+0(FP), F0
+ 	SQRTD	F0, F0
+ 	MOVD	F0, ret+8(FP)
++#endif
+ 	RET
+diff --git a/src/runtime/cgo/asm_mipsx.s b/src/runtime/cgo/asm_mipsx.s
+index dd16af6fbe..b717ccc56a 100644
+--- a/src/runtime/cgo/asm_mipsx.s
++++ b/src/runtime/cgo/asm_mipsx.s
+@@ -20,7 +20,11 @@ TEXT crosscall2(SB),NOSPLIT,$-4
+ 
+ 	// Space for 9 caller-saved GPR + LR + 6 caller-saved FPR.
+ 	// O32 ABI allows us to smash 16 bytes argument area of caller frame.
++#ifndef GOMIPS_softfloat
+ 	SUBU	$(4*14+8*6-16), R29
++#else
++	SUBU    $(4*14-16), R29 // For soft-float, no FPR.
++#endif
+ 	MOVW	R5, (4*1)(R29)
+ 	MOVW	R6, (4*2)(R29)
+ 	MOVW	R7, (4*3)(R29)
+@@ -34,14 +38,14 @@ TEXT crosscall2(SB),NOSPLIT,$-4
+ 	MOVW	R23, (4*11)(R29)
+ 	MOVW	g, (4*12)(R29)
+ 	MOVW	R31, (4*13)(R29)
+-
++#ifndef GOMIPS_softfloat
+ 	MOVD	F20, (4*14)(R29)
+ 	MOVD	F22, (4*14+8*1)(R29)
+ 	MOVD	F24, (4*14+8*2)(R29)
+ 	MOVD	F26, (4*14+8*3)(R29)
+ 	MOVD	F28, (4*14+8*4)(R29)
+ 	MOVD	F30, (4*14+8*5)(R29)
+-
++#endif
+ 	JAL	runtime·load_g(SB)
+ 	JAL	(R4)
+ 
+@@ -55,7 +59,7 @@ TEXT crosscall2(SB),NOSPLIT,$-4
+ 	MOVW	(4*11)(R29), R23
+ 	MOVW	(4*12)(R29), g
+ 	MOVW	(4*13)(R29), R31
+-
++#ifndef GOMIPS_softfloat
+ 	MOVD	(4*14)(R29), F20
+ 	MOVD	(4*14+8*1)(R29), F22
+ 	MOVD	(4*14+8*2)(R29), F24
+@@ -64,4 +68,7 @@ TEXT crosscall2(SB),NOSPLIT,$-4
+ 	MOVD	(4*14+8*5)(R29), F30
+ 
+ 	ADDU	$(4*14+8*6-16), R29
++#else
++	ADDU    $(4*14-16), R29
++#endif
+ 	RET
+diff --git a/src/runtime/cgo/gcc_mipsx.S b/src/runtime/cgo/gcc_mipsx.S
+index c51c36a9b7..54f4b8201a 100644
+--- a/src/runtime/cgo/gcc_mipsx.S
++++ b/src/runtime/cgo/gcc_mipsx.S
+@@ -14,8 +14,11 @@
+ .globl crosscall1
+ .set noat
+ crosscall1:
++#ifndef __mips_soft_float
+ 	addiu	$29, $29, -88
+-
++#else
++	addiu	$29, $29, -40 // For soft-float, no need to make room for FP registers
++#endif
+ 	sw	$31, 0($29)
+ 	sw	$16, 4($29)
+ 	sw	$17, 8($29)
+@@ -27,14 +30,14 @@ crosscall1:
+ 	sw	$23, 32($29)
+ 	sw	$30, 36($29)
+ 
++#ifndef __mips_soft_float
+ 	sdc1	$f20, 40($29)
+ 	sdc1	$f22, 48($29)
+ 	sdc1	$f24, 56($29)
+ 	sdc1	$f26, 64($29)
+ 	sdc1	$f28, 72($29)
+ 	sdc1	$f30, 80($29)
+-
+-
++#endif
+ 	move	$20, $4 // save R4
+ 	move	$4, $6
+ 	jalr	$5	// call setg_gcc
+@@ -49,16 +52,20 @@ crosscall1:
+ 	lw	$22, 28($29)
+ 	lw	$23, 32($29)
+ 	lw	$30, 36($29)
++#ifndef __mips_soft_float
+ 	ldc1	$f20, 40($29)
+ 	ldc1	$f22, 48($29)
+ 	ldc1	$f24, 56($29)
+ 	ldc1	$f26, 64($29)
+ 	ldc1	$f28, 72($29)
+ 	ldc1	$f30, 80($29)
+-
++#endif
+ 	lw	$31, 0($29)
+-
++#ifndef __mips_soft_float
+ 	addiu	$29, $29, 88
++#else
++	addiu	$29, $29, 40
++#endif
+ 	jr	$31
+ 
+ .set at
+diff --git a/src/runtime/softfloat64.go b/src/runtime/softfloat64.go
+index 1678e8f9f1..62ace5def3 100644
+--- a/src/runtime/softfloat64.go
++++ b/src/runtime/softfloat64.go
+@@ -483,3 +483,115 @@ again2:
+ 
+ 	return q1*b + q0, (un21*b + un0 - q0*v) >> s
+ }
++
++func fadd32(x, y uint32) uint32 {
++	return f64to32(fadd64(f32to64(x), f32to64(y)))
++}
++
++func fmul32(x, y uint32) uint32 {
++	return f64to32(fmul64(f32to64(x), f32to64(y)))
++}
++
++func fdiv32(x, y uint32) uint32 {
++	return f64to32(fdiv64(f32to64(x), f32to64(y)))
++}
++
++func feq32(x, y uint32) bool {
++	cmp, nan := fcmp64(f32to64(x), f32to64(y))
++	return !(cmp != 0 || nan)
++}
++
++func fgt32(x, y uint32) bool {
++	cmp, nan := fcmp64(f32to64(x), f32to64(y))
++	return !(cmp < 1 || nan)
++}
++
++func fge32(x, y uint32) bool {
++	cmp, nan := fcmp64(f32to64(x), f32to64(y))
++	return !(cmp < 0 || nan)
++}
++
++func feq64(x, y uint64) bool {
++	cmp, nan := fcmp64(x, y)
++	return !(cmp != 0 || nan)
++}
++
++func fgt64(x, y uint64) bool {
++	cmp, nan := fcmp64(x, y)
++	return !(cmp < 1 || nan)
++}
++
++func fge64(x, y uint64) bool {
++	cmp, nan := fcmp64(x, y)
++	return !(cmp < 0 || nan)
++}
++
++func fint32to32(x int32) uint32 {
++	return f64to32(fintto64(int64(x)))
++}
++
++func fint32to64(x int32) uint64 {
++	return fintto64(int64(x))
++}
++
++func fint64to32(x int64) uint32 {
++	return f64to32(fintto64(x))
++}
++
++func fint64to64(x int64) uint64 {
++	return fintto64(x)
++}
++
++func f32toint32(x uint32) int32 {
++	val, _ := f64toint(f32to64(x))
++	return int32(val)
++}
++
++func f32toint64(x uint32) int64 {
++	val, _ := f64toint(f32to64(x))
++	return val
++}
++
++func f64toint32(x uint64) int32 {
++	val, _ := f64toint(x)
++	return int32(val)
++}
++
++func f64toint64(x uint64) int64 {
++	val, _ := f64toint(x)
++	return val
++}
++
++func f64touint64(x float64) uint64 {
++	if x < float64(1<<63) {
++		return uint64(int64(x))
++	}
++	y := x - float64(1<<63)
++	z := uint64(int64(y))
++	return z | (1 << 63)
++}
++
++func f32touint64(x float32) uint64 {
++	if x < float32(1<<63) {
++		return uint64(int64(x))
++	}
++	y := x - float32(1<<63)
++	z := uint64(int64(y))
++	return z | (1 << 63)
++}
++
++func fuint64to64(x uint64) float64 {
++	if int64(x) >= 0 {
++		return float64(int64(x))
++	}
++	// See ../cmd/compile/internal/gc/ssa.go:uint64Tofloat
++	y := x & 1
++	z := x >> 1
++	z = z | y
++	r := float64(int64(z))
++	return r + r
++}
++
++func fuint64to32(x uint64) float32 {
++	return float32(fuint64to64(x))
++}
