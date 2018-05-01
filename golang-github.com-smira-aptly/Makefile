@@ -45,7 +45,8 @@ define Package/golang-github.com-smira-aptly
 	TITLE:=Atply v$(PKG_VERSION) - Debian Repository Management
 	URL:=http://lxd-phabricator03.lxd.mammoth.home/source/skydive_local.git
 	MAINTAINER:=Manfred Gschweidl <m.gschweidl@gmail.com>
-	DEPENDS:=+libpcap +libxml2 +golang-github.com-google-gopacket
+	#DEPENDS:=+libpcap +libxml2 +golang-github.com-google-gopacket
+	DEPENDS:=
 	#DEFAULT:=n
 endef
 
