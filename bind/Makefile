@@ -49,7 +49,7 @@ endef
 define Package/bind-libs
   SECTION:=libs
   CATEGORY:=Libraries
-  DEPENDS:=+libopenssl zlib
+  DEPENDS:=+libopenssl +zlib
   TITLE:=bind shared libraries
   URL:=https://www.isc.org/software/bind
 endef
