@@ -70,7 +70,7 @@ endef
 
 define Package/bind-tools
   $(call Package/bind/Default)
-TITLE+= administration tools (all - Added by Mammoth: delv and nsupdate)
+  TITLE+= administration tools (all - Added by Mammoth: delv and nsupdate)
 endef
 
 define Package/bind-rndc
