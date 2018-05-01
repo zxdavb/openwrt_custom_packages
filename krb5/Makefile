@@ -9,7 +9,7 @@ include $(TOPDIR)/rules.mk
 
 PKG_NAME:=krb5
 PKG_VERSION:=1.16
-PKG_RELEASE:=1
+PKG_RELEASE:=2
 
 PKG_MAINTAINER:=W. Michael Petullo <mike@flyn.org>
 
@@ -40,7 +40,7 @@ define Package/krb5-libs
 	SECTION:=net
 	CATEGORY:=Network
 	TITLE:=Kerberos
-	DEPENDS:=+libncurses
+	DEPENDS:=+libncurses +libcomerr
 	TITLE:=Kerberos 5 Shared Libraries
 	URL:=http://web.mit.edu/kerberos/
 endef
@@ -78,6 +78,7 @@ CONFIGURE_ARGS += \
 	--localstatedir=/etc \
 	--with-size-optimizations \
 	--disable-rpath \
+	--with-system-et \
 	--without-krb5-config
 
 define Build/InstallDev
