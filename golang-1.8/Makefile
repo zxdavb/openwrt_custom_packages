@@ -5,7 +5,8 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=golang
-PKG_VERSION:=1.8.5
+#PKG_VERSION:=1.8.5
+PKG_VERSION:=1.8.7
 PKG_RELEASE:=1
 
 PKG_MAINTAINER:=Manfred Gschweidl <m.gschweidl@gmail.com>
@@ -13,7 +14,8 @@ PKG_LICENSE_FILES:=LICENSE
 
 PKG_SOURCE:=go$(PKG_VERSION).tar.gz
 PKG_SOURCE_URL:=https://github.com/golang/go/archive/
-PKG_HASH:=3557e398501ba32f64945bf1e66c03ea5aa2c6a098ea526d7869c07188cd9f73
+#PKG_HASH:=3557e398501ba32f64945bf1e66c03ea5aa2c6a098ea526d7869c07188cd9f73
+PKG_HASH:=2b32fd5bbb6431deaaf9a87624bf90833be659509d4bc4cddf51d159550c71a7
 
 # Default:
 # PKG_BUILD_DIR:=$(BUILD_DIR)/$(PKG_NAME)-$(PKG_VERSION)
@@ -31,19 +33,19 @@ EXCLUDE_DEP_PATH:="*testdata*"
 RSTRIP:=:
 
 # GOMIPS - 1.8
-ifeq ($(findstring 1.8, $(PKG_VERSION)),1.8)
-  ifneq ($(CONFIG_mips)$(CONFIG_mipsel),)
-    ifneq ($(CONFIG_GO_SOFTFLOAT),)
-      GO_GOMIPS:=softfloat
-    else
-      GO_GOMPIS:=r1
-    endif
-  else
-    GO_GOMIPS:=r1
-  endif
-endif
+#ifeq ($(findstring 1.8, $(PKG_VERSION)),1.8)
+#  ifneq ($(CONFIG_mips)$(CONFIG_mipsel),)
+#    ifneq ($(CONFIG_GO_SOFTFLOAT),)
+#      GO_GOMIPS:=softfloat
+#    else
+#      GO_GOMPIS:=r1
+#    endif
+#  else
+#    GO_GOMIPS:=r1
+#  endif
+#endif
 
-define Package/golang
+define Package/golang-1.8
 	SUBMENU:=Golang
 	SECTION:=lang
 	CATEGORY:=Languages
@@ -54,7 +56,7 @@ define Package/golang
 	#DEFAULT:=n
 endef
 
-define Package/golang/description
+define Package/golang-1.8/description
 	GO compiler and runtime package version $(PKG_VERSION)
 endef
 
@@ -91,7 +93,7 @@ define Build/InstallDev
 	$(INSTALL_DIR) $(1)/$(GO_ADDITIONAL_PACKAGES)/src
 endef
 
-define Package/golang/install
+define Package/golang-1.8/install
 	$(INSTALL_DIR) $(1)/usr/lib/$(PKG_NAME)-$(PKG_VERSION)/bin
 	ln -srf $(1)/usr/lib/$(PKG_NAME)-$(PKG_VERSION) $(1)/$(GOROOT_TARGET_FINAL)
 
@@ -126,7 +128,7 @@ endif
 	$(INSTALL_DIR) $(1)/$(GO_ADDITIONAL_PACKAGES)/src
 endef
 
-define Package/golang/postrm
+define Package/golang-1.8/postrm
 #!/bin/sh
 rm -f /usr/bin/go
 rm -f /usr/bin/gofmt
@@ -135,4 +137,4 @@ rm -rf /usr/lib/golang-1.8.5
 #rm -rf $(GO_ADDITIONAL_PACKAGES)
 endef
 
-$(eval $(call BuildPackage,golang))
+$(eval $(call BuildPackage,golang-1.8))

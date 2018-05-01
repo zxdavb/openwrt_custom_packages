@@ -1,0 +1,34 @@
+--- a/src/cmd/dist/build.go
++++ b/src/cmd/dist/build.go
+@@ -235,6 +235,11 @@ func xinit() {
+ 	os.Setenv("GOROOT", goroot)
+ 	os.Setenv("GOROOT_FINAL", goroot_final)
+ 
++	//change gomips for toolchain compilers > 1.10
++	if gomips == "hardfloat" {
++		gomips = "r1"
++	}
++
+ 	// Make the environment more predictable.
+ 	os.Setenv("LANG", "C")
+ 	os.Setenv("LANGUAGE", "en_US.UTF8")
+--- a/src/cmd/internal/obj/util.go
++++ b/src/cmd/internal/obj/util.go
+@@ -37,7 +37,7 @@ var (
+ 	GOOS    = envOr("GOOS", defaultGOOS)
+ 	GO386   = envOr("GO386", defaultGO386)
+ 	GOARM   = goarm()
+-	GOMIPS	= gomips()
++	GOMIPS  = gomips()
+ 	Version = version
+ )
+ 
+@@ -61,6 +61,8 @@ func gomips() string {
+ 		return "r1softfloat"
+ 	case "r1", "r2", "r1softfloat", "r2softfloat":
+ 		return v
++	case "hardfloat":
++		return "r1"
+ 	}
+ 	log.Fatalf("Invalid GOMIPS value. Must be r1, r2, r1softfloat, r2softfloat or softfloat.")
+ 	panic("unreachable")
