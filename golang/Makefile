@@ -33,32 +33,6 @@ GO_PKG_CONFIG:="/usr/bin/pkg-config"
 EXCLUDE_DEP_PATH:="*testdata*"
 RSTRIP:=:
 
-# GOMIPS - 1.8
-#ifeq ($(findstring 1.8, $(PKG_VERSION)),1.8)
-#  ifneq ($(CONFIG_mips)$(CONFIG_mipsel),)
-#    ifneq ($(CONFIG_GO_SOFTFLOAT),)
-#      GO_GOMIPS:=softfloat
-#    else
-#      GO_GOMPIS:=r1
-#    endif
-#  else
-#    GO_GOMIPS:=r1
-#  endif
-#endif
-
-# GOMIPS - 1.10
-#ifeq ($(findstring 1.10, $(PKG_VERSION)),1.10)
-#  ifneq ($(CONFIG_mips)$(CONFIG_mipsel),)
-#    ifneq ($(CONFIG_GO_SOFTFLOAT),)
-#      GO_GOMIPS:=softfloat
-#    else
-#      GO_GOMPIS:=hardfloat
-#    endif
-#  else
-#    GO_GOMIPS:=
-#  endif
-#endif
-
 define Package/golang
 	SUBMENU:=Golang
 	SECTION:=lang

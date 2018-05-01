@@ -34,19 +34,6 @@ GO_PKG_CONFIG:="/usr/bin/pkg-config"
 EXCLUDE_DEP_PATH:="*testdata*"
 RSTRIP:=:
 
-# GOMIPS - 1.8
-#ifeq ($(findstring 1.8, $(PKG_VERSION)),1.8)
-#  ifneq ($(CONFIG_mips)$(CONFIG_mipsel),)
-#    ifneq ($(CONFIG_GO_SOFTFLOAT),)
-#      GO_GOMIPS:=softfloat
-#    else
-#      GO_GOMPIS:=r1
-#    endif
-#  else
-#    GO_GOMIPS:=r1
-#  endif
-#endif
-
 define Package/golang-1.8
 	SUBMENU:=Golang
 	SECTION:=lang
@@ -72,7 +59,6 @@ define Build/Compile
 		$(if $(GO_GO386),GO386=$(GO_GO386)) \
 		CGO_ENABLED="$(GO_CGO_ENABLED)" \
 		PKG_CONFIG=$(GO_PKG_CONFIG) \
-		GO_VERSION=$(GO_VERSION) \
 		$(if $(CONFIG_EXTRA_GO_CONFIG_OPTION),GO_DISTFLAGS=$(CONFIG_EXTRA_GO_CONFIG_OPTION)) \
 		CC="$(GO_CC)" CXX="$(GO_CXX)" \
 		CC_FOR_TARGET="$(GO_CC_FOR_TARGET)" CXX_FOR_TARGET="$(GO_CXX_FOR_TARGET)" \
