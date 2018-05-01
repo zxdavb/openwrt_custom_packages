@@ -81,6 +81,8 @@ CONFIGURE_ARGS += \
 	--with-system-et \
 	--without-krb5-config
 
+TARGET_CFLAGS += -I$(STAGING_DIR)/usr/include/et
+
 define Build/InstallDev
 	$(INSTALL_DIR) $(1)/usr/include
 	$(CP) $(PKG_INSTALL_DIR)/usr/include $(1)/usr
