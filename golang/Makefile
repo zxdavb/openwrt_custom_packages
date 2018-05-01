@@ -22,9 +22,9 @@ PKG_HASH:=23066371f3a60e9b1017ca25dd2b9bc6b77aad8e72f25295566ba08f01140c7a
 PKG_USE_GO:=1
 
 GO_TOOLCHAIN_VARIANT=toolchain
-#$(subst '.',' ',$(PKG_VERSION))
-#$(wordlist 1,2, $(subst '.',' ',$(PKG_VERSION)))
-GO_RELEASE_NAME:=$(PKG_NAME)-$(subst ' ','.', $(wordlist 1,2, $(subst '.',' ',$(PKG_VERSION))))
+empty:=
+space:=$(empty) $(empty)
+GO_RELEASE_NAME:=$(PKG_NAME)-$(subst $(space),.,$(wordlist 1,2, $(subst .,$(space),$(PKG_VERSION))))
 
 include $(INCLUDE_DIR)/package.mk
 
