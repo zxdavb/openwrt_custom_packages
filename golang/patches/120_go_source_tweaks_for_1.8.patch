@@ -1,0 +1,29 @@
+--- a/src/cmd/dist/build.go
++++ b/src/cmd/dist/build.go
+@@ -205,6 +205,12 @@ func xinit() {
+ 	os.Setenv("GOROOT", goroot)
+ 	os.Setenv("GOROOT_FINAL", goroot_final)
+ 
++	// change gomips for toolchain compiler 1.8.x
++	if gomips != "" && gomips != "hardfloat" && gomips != "softfloat" {
++		gomips = "hardfloat"
++	}
++	// end toolchain compiler change
++
+ 	// Use a build cache separate from the default user one.
+ 	// Also one that will be wiped out during startup, so that
+ 	// make.bash really does start from a clean slate.
+--- a/src/cmd/internal/objabi/util.go
++++ b/src/cmd/internal/objabi/util.go
+@@ -48,6 +48,11 @@ func gomips() string {
+ 	switch v := envOr("GOMIPS", defaultGOMIPS); v {
+ 	case "hardfloat", "softfloat":
+ 		return v
++	// change gomips for toolchain compiler 1.8.x
++	case "r1", "r2":
++		return "hardfloat"
++	case "r1softfloat", "r2softfloat":
++		return "softfloat"
+ 	}
+ 	log.Fatalf("Invalid GOMIPS value. Must be hardfloat or softfloat.")
+ 	panic("unreachable")
