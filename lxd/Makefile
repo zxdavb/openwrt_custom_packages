@@ -16,10 +16,10 @@ PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
 PKG_HASH:=9c13f1bfbec68021c8e2264bcbcdf1f53de693256affa0f92a134d9d5ccbb754
 
 #PKG_INSTALL:=1
-PKG_BUILD_DEPENDS:=+acl +dnsmasq +git +golang +lxc +make +pkg-config +rsync \
-	+squashfs-tools +tar +xz \
-	+libseccomp +libcap \
-	+lvm2 +btrfs-progs
+PKG_BUILD_DEPENDS:=acl dnsmasq git golang lxc make pkg-config rsync \
+	squashfs-tools tar xz \
+	libseccomp libcap \
+	lvm2 btrfs-progs
 
 # Default:
 # PKG_BUILD_DIR:=$(BUILD_DIR)/$(PKG_NAME)-$(PKG_VERSION)
