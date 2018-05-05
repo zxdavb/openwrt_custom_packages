@@ -1,0 +1,61 @@
+#!/bin/sh /etc/rc.common
+# Copyright (C) 2014 Noah Meyerhans <frodo@morgul.net>
+# Licensed under the terms of the GNU General Public License version 2
+# or (at your discretion) any later later version
+
+USE_PROCD=1
+
+START=80
+
+config_file=/etc/lxd/lxd.conf
+pid_file=/var/run/lxd/lxd.pid
+
+logdir=/var/log/lxd/
+#cachedir=/var/cache/lxd
+libdir=/var/lib/lxd
+
+fix_perms() {
+    for dir in $libdir $logdir; do
+	test -e "$dir" || {
+            mkdir -p "$dir"
+            chgrp lxd "$dir"
+            chmod g+w "$dir"
+	}
+    done
+}
+
+start_service() {
+    user_exists lxd 200 || user_add lxd 200
+    group_exists lxd 200 || group_add lxd 200
+    fix_perms
+    procd_open_instance
+    # Binary "named": flag "-u" not working with threads
+    # and disabled capabilities
+    # HINT: OpenWRT kernel has capabilities enabled but
+    # filesystems are not built with extended attributes
+    # (needed by capabilities) by default
+    # => Therefore: Workaround with procd_set_param user :-)
+    #procd_set_param command /usr/sbin/named -u bind -f -c $config_file
+    #procd_set_param user bind
+    procd_set_param command /usr/sbin/lxd --group lxd --logfile=/var/log/lxd/lxd.log
+    # NPROC limit only works when run by non-root user
+    # procd_set_param limits nproc="4"
+    # procd_set_param limits core="unlimited"
+    # procd_set_param stdout 1 # forward stdout of the command to logd
+    # procd_set_param stderr 1 # forward stderr to logd
+    # write a pid file on instance start (remove stop)
+    # procd_set_param pidfile /var/run/lxd/lxd.pid 
+    procd_set_param respawn
+    procd_close_instance
+}
+
+stop_service() {
+  for i in `ls /sys/class/net/ |grep lxdbr`; do
+    lxd_pid=`cat /var/lib/lxd/networks/$i/dnsmasq.pid`
+    if [ -n $lxd_pid ]; then
+      logger -t "lxd-bridge[$i]" "Stopping associated dnsmasq service for by LXD managed bridge"
+      logger -t "dnsmasq[$lxd_pid]" "Stop dnsmasq for interface $i"
+      kill -SIGKILL $lxd_pid &> /dev/null
+    fi
+  done
+}

@@ -1,0 +1,10 @@
+--- a/lxd/main_forkfile.go
++++ b/lxd/main_forkfile.go
+@@ -17,6 +17,7 @@ import (
+ #include <string.h>
+ #include <sys/stat.h>
+ #include <unistd.h>
++#include <linux/limits.h>
+ 
+ extern char* advance_arg(bool required);
+ extern void error(char *msg);
