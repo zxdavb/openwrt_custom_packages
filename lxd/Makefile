@@ -65,7 +65,8 @@ define Package/lxd-server
 $(call Package/lxd/Default)
   TITLE+= server
   DEPENDS=+libacl +acl +lxc +liblxc \
-	  +squashfs-tools-unsquashfs +xz
+	  +squashfs-tools-unsquashfs +xz \
+	  +shadow-newuidmap +shadow-newgidmap
 endef
 
 define Package/lxd-server/description
@@ -106,14 +107,14 @@ endef
 
 define Package/lxd-server/install
 	echo "LXD server"
-	$(call Package/GO/Install/Default,$(1),lxd lxd-benchmark,,none)
+	$(call Package/GO/Install/Default,$(1),lxd lxd-benchmark,none,none)
 	$(INSTALL_DIR) $(1)/etc/init.d
 	$(INSTALL_BIN) ./files/lxd.init $(1)/etc/init.d/lxd
 endef
 
 define Package/lxd-client/install
 	echo "LXD client"
-	$(call Package/GO/Install/Default,$(1),lxc lxd-p2c,,none)
+	$(call Package/GO/Install/Default,$(1),lxc lxd-p2c,none,none)
 endef
 
 #### Install / Uninstall scripts
