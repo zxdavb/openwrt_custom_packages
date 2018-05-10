@@ -13,8 +13,9 @@ start() {
 
 	# originally 5 seconds, but on r7800 it was to less and not all
 	# network interfaces were available
-	# 10 was also to less, so at the end 15
-	sleep 15
+	# 10 and 15 were also to less, so at the end 20
+	# but check for bind / named as sleep times are combined
+	sleep 20
 	/usr/sbin/dhcpd -q -6 -cf $config_file -lf $lease_file -pf $pid_file $dhcp_ifs
 
 	if [ $? -ne 0 ]; then

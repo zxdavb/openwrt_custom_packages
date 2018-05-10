@@ -1,0 +1,10 @@
+--- a/src/lxc/tools/lxc_monitor.c
++++ b/src/lxc/tools/lxc_monitor.c
+@@ -40,6 +40,7 @@
+ #include <sys/types.h>
+ #include <sys/un.h>
+ #include <sys/wait.h>
++#include <stddef.h>
+ 
+ #include <lxc/lxccontainer.h>
+ 

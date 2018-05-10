@@ -28,6 +28,15 @@ start_service() {
     user_exists bind 57 || user_add bind 57
     group_exists bind 57 || group_add bind 57
     fix_perms
+
+    ####
+    # originally no sleep necessary, but on r7800 it was to less and not all
+    # network interfaces were available
+    # 10 and 15 were also to less, so at the end 20
+    # but check also for dhcpd (sleep times are combined)
+    sleep 20
+    #### END
+
     procd_open_instance
     # Binary "named": flag "-u" not working with threads
     # and disabled capabilities

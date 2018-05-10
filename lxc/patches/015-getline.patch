@@ -1,6 +1,6 @@
 --- a/src/lxc/utils.h
 +++ b/src/lxc/utils.h
-@@ -59,11 +59,7 @@ extern int mkdir_p(const char *dir, mode_t mode);
+@@ -109,11 +109,7 @@ extern int mkdir_p(const char *dir, mode
  extern char *get_rundir(void);
  
  /* Define getline() if missing from the C library */
