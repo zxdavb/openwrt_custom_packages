@@ -1,0 +1,121 @@
+--- a/shared/util_linux.go
++++ b/shared/util_linux.go
+@@ -328,8 +328,8 @@ func GetFileStat(p string) (uid int, gid
+ 	major = -1
+ 	minor = -1
+ 	if stat.Mode&syscall.S_IFBLK != 0 || stat.Mode&syscall.S_IFCHR != 0 {
+-		major = Major(stat.Rdev)
+-		minor = Minor(stat.Rdev)
++		major = Major(uint64(stat.Rdev))
++		minor = Minor(uint64(stat.Rdev))
+ 	}
+ 
+ 	return
+--- a/shared/osarch/architectures.go
++++ b/shared/osarch/architectures.go
+@@ -14,6 +14,10 @@ const (
+ 	ARCH_64BIT_POWERPC_BIG_ENDIAN    = 6
+ 	ARCH_64BIT_POWERPC_LITTLE_ENDIAN = 7
+ 	ARCH_64BIT_S390_BIG_ENDIAN       = 8
++	ARCH_32BIT_MIPS_BIG_ENDIAN       = 9
++	ARCH_32BIT_MIPS_LITTLE_ENDIAN    = 10
++	ARCH_64BIT_MIPS_BIG_ENDIAN       = 11
++	ARCH_64BIT_MIPS_LITTLE_ENDIAN    = 12
+ )
+ 
+ var architectureNames = map[int]string{
+@@ -25,6 +29,10 @@ var architectureNames = map[int]string{
+ 	ARCH_64BIT_POWERPC_BIG_ENDIAN:    "ppc64",
+ 	ARCH_64BIT_POWERPC_LITTLE_ENDIAN: "ppc64le",
+ 	ARCH_64BIT_S390_BIG_ENDIAN:       "s390x",
++	ARCH_32BIT_MIPS_BIG_ENDIAN:       "mips",
++	ARCH_32BIT_MIPS_LITTLE_ENDIAN:    "mipsel",
++	ARCH_64BIT_MIPS_BIG_ENDIAN:       "mips64",
++	ARCH_64BIT_MIPS_LITTLE_ENDIAN:    "mips64el",
+ }
+ 
+ var architectureAliases = map[int][]string{
+@@ -35,6 +43,10 @@ var architectureAliases = map[int][]stri
+ 	ARCH_32BIT_POWERPC_BIG_ENDIAN:    {"powerpc"},
+ 	ARCH_64BIT_POWERPC_BIG_ENDIAN:    {"powerpc64", "ppc64"},
+ 	ARCH_64BIT_POWERPC_LITTLE_ENDIAN: {"ppc64el"},
++	ARCH_32BIT_MIPS_BIG_ENDIAN:       {"mips"},
++	ARCH_32BIT_MIPS_LITTLE_ENDIAN:    {"mipsel", "mipsle"},
++	ARCH_64BIT_MIPS_BIG_ENDIAN:       {"mips64"},
++	ARCH_64BIT_MIPS_LITTLE_ENDIAN:    {"mips64el", "mips64le"},
+ }
+ 
+ var architecturePersonalities = map[int]string{
+@@ -46,6 +58,10 @@ var architecturePersonalities = map[int]
+ 	ARCH_64BIT_POWERPC_BIG_ENDIAN:    "linux64",
+ 	ARCH_64BIT_POWERPC_LITTLE_ENDIAN: "linux64",
+ 	ARCH_64BIT_S390_BIG_ENDIAN:       "linux64",
++	ARCH_32BIT_MIPS_BIG_ENDIAN:       "linux32",
++	ARCH_32BIT_MIPS_LITTLE_ENDIAN:    "linux32",
++	ARCH_64BIT_MIPS_BIG_ENDIAN:       "linux64",
++	ARCH_64BIT_MIPS_LITTLE_ENDIAN:    "linux64",
+ }
+ 
+ var architectureSupportedPersonalities = map[int][]int{
+@@ -57,6 +73,10 @@ var architectureSupportedPersonalities =
+ 	ARCH_64BIT_POWERPC_BIG_ENDIAN:    {ARCH_32BIT_POWERPC_BIG_ENDIAN},
+ 	ARCH_64BIT_POWERPC_LITTLE_ENDIAN: {},
+ 	ARCH_64BIT_S390_BIG_ENDIAN:       {},
++	ARCH_32BIT_MIPS_BIG_ENDIAN:       {},
++	ARCH_32BIT_MIPS_LITTLE_ENDIAN:    {},
++	ARCH_64BIT_MIPS_BIG_ENDIAN:       {ARCH_32BIT_MIPS_BIG_ENDIAN},
++	ARCH_64BIT_MIPS_LITTLE_ENDIAN:    {ARCH_32BIT_MIPS_LITTLE_ENDIAN},
+ }
+ 
+ const ArchitectureDefault = "x86_64"
+--- a/lxd/util/fs_32bit.go
++++ b/lxd/util/fs_32bit.go
+@@ -1,4 +1,4 @@
+-// +build 386 arm ppc s390
++// +build 386 arm ppc s390 mipsle mips
+ 
+ package util
+ 
+--- a/lxd/util/fs_64bit.go
++++ b/lxd/util/fs_64bit.go
+@@ -1,4 +1,4 @@
+-// +build amd64 ppc64 ppc64le arm64 s390x
++// +build amd64 ppc64 ppc64le arm64 s390x mips64 mips64le
+ 
+ package util
+ 
+--- a/lxd/devices.go
++++ b/lxd/devices.go
+@@ -242,8 +242,8 @@ func deviceLoadGpu() ([]gpuDevice, []nvi
+ 					return nil, nil, err
+ 				}
+ 				tmpGpu.nvidia.path = nvidiaPath
+-				tmpGpu.nvidia.major = shared.Major(stat.Rdev)
+-				tmpGpu.nvidia.minor = shared.Minor(stat.Rdev)
++				tmpGpu.nvidia.major = shared.Major(uint64(stat.Rdev))
++				tmpGpu.nvidia.minor = shared.Minor(uint64(stat.Rdev))
+ 				tmpGpu.nvidia.id = strconv.Itoa(tmpGpu.nvidia.minor)
+ 			}
+ 
+@@ -285,8 +285,8 @@ func deviceLoadGpu() ([]gpuDevice, []nvi
+ 			}
+ 			tmpNividiaGpu := nvidiaGpuDevices{
+ 				path:  nvidiaPath,
+-				major: shared.Major(stat.Rdev),
+-				minor: shared.Minor(stat.Rdev),
++				major: shared.Major(uint64(stat.Rdev)),
++				minor: shared.Minor(uint64(stat.Rdev)),
+ 			}
+ 			nvidiaDevices = append(nvidiaDevices, tmpNividiaGpu)
+ 		}
+@@ -926,8 +926,8 @@ func deviceGetAttributes(path string) (s
+ 	}
+ 
+ 	// Return the device information
+-	major := shared.Major(stat.Rdev)
+-	minor := shared.Minor(stat.Rdev)
++	major := shared.Major(uint64(stat.Rdev))
++	minor := shared.Minor(uint64(stat.Rdev))
+ 	return dType, major, minor, nil
+ }
+ 
