@@ -10,7 +10,7 @@ START=80
 #config_file=/etc/lxd/lxd.conf
 #pid_file=/var/run/lxd/lxd.pid
 
-log_dir=/var/log/lxd/
+log_dir=/var/log/lxd
 #cachedir=/var/cache/lxd
 lib_dir=/var/lib/lxd
 lxd_dir=/srv/lxd
