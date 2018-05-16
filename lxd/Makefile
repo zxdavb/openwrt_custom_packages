@@ -66,7 +66,8 @@ $(call Package/lxd/Default)
   TITLE+= server
   DEPENDS=+libacl +acl +lxc +liblxc \
 	  +squashfs-tools-unsquashfs +xz +xz-utils \
-	  +shadow-newuidmap +shadow-newgidmap
+	  +shadow-newuidmap +shadow-newgidmap +tar \
+	  +rsync
 endef
 
 define Package/lxd-server/description

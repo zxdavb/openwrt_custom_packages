@@ -1,6 +1,47 @@
 --- a/shared/util_linux.go
 +++ b/shared/util_linux.go
-@@ -328,8 +328,8 @@ func GetFileStat(p string) (uid int, gid
+@@ -149,6 +149,13 @@ again:
+ 
+ 	return ret;
+ }
++
++int is_little_endian() {
++	int endian = 0;
++	char *bytes = (char *) &endian;
++	*bytes = 0x1;
++	return endian;
++}
+ */
+ import "C"
+ 
+@@ -304,8 +311,26 @@ again:
+ 	return int(C.int(result.gr_gid)), nil
+ }
+ 
++func IsLittleEndianC() bool {
++	littleEndian := (int)(C.is_little_endian())
++	if littleEndian > 0 {
++		return true
++	} else {
++		return false
++	}
++}
++
+ // --- pure Go functions ---
+ 
++func IsLittleEndian() bool {
++	var x uint16 = 0x0102
++	if *(*byte)(unsafe.Pointer(&x)) == 0x01 {
++		return false
++	} else {
++		return true
++	}
++}
++
+ func Major(dev uint64) int {
+ 	return int(((dev >> 8) & 0xfff) | ((dev >> 32) & (0xfffff000)))
+ }
+@@ -328,8 +353,8 @@ func GetFileStat(p string) (uid int, gid
  	major = -1
  	minor = -1
  	if stat.Mode&syscall.S_IFBLK != 0 || stat.Mode&syscall.S_IFCHR != 0 {
@@ -11,6 +52,27 @@
  	}
  
  	return
+@@ -754,12 +779,19 @@ func Uname() (*Utsname, error) {
+ 		return nil, err
+ 	}
+ 
++	machine := intArrayToString(uname.Machine)
++	if machine == "mips" || machine == "mips64" {
++		if IsLittleEndian() {
++			machine += "le"
++		}
++	}
++
+ 	return &Utsname{
+ 		Sysname:    intArrayToString(uname.Sysname),
+ 		Nodename:   intArrayToString(uname.Nodename),
+ 		Release:    intArrayToString(uname.Release),
+ 		Version:    intArrayToString(uname.Version),
+-		Machine:    intArrayToString(uname.Machine),
++		Machine:    machine,
+ 		Domainname: intArrayToString(uname.Domainname),
+ 	}, nil
+ }
 --- a/shared/osarch/architectures.go
 +++ b/shared/osarch/architectures.go
 @@ -14,6 +14,10 @@ const (
