@@ -125,7 +125,7 @@ define Package/lxd-server/postinst
 echo "Create symlinks for server binaries..."
 ln -sf $(GO_ADDITIONAL_PACKAGES)/bin/lxd /usr/sbin/lxd
 ln -sf $(GO_ADDITIONAL_PACKAGES)/bin/lxd-benchmark /usr/bin/lxd-benchmark
-echo "Create 'sub{u,g}ids' for 'root' (LXD can run unprivileged containers)..."
+echo "Create 'sub{u,g}ids' for 'root' and 'lxd' (LXD can run unprivileged containers)..."
 echo "root:1000000:1000000000" | tee -a /etc/subuid /etc/subgid
 echo "lxd:1000000:1000000000" | tee -a /etc/subuid /etc/subgid
 echo "HINT: the '--group' sudo bit allows everyone to talk to LXD in the 'sudo' group"
@@ -147,7 +147,7 @@ define Package/lxd-server/postrm
 echo "Remove symlinks for server binaries..."
 rm -f /usr/sbin/lxd
 rm -f /usr/bin/lxd-benchmark
-echo "IMPORTANT: 'sub{u,g}ids' are not removed for 'root' (can be done manually)"
+echo "IMPORTANT: 'sub{u,g}ids' are not removed for 'root' and 'lxd' (can be done manually)"
 endef
 
 # client postrm

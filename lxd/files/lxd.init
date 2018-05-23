@@ -17,8 +17,13 @@ lxd_dir=/srv/lxd
 lxd_bin=/usr/sbin/lxd
 user_grp=lxd
 
+proc_dir=/srv/proc
+sys_dir=/srv/sys
+
+systemd_dir=/sys/fs/cgroup/systemd
+
 fix_perms() {
-    for dir in $lxd_dir $log_dir $lib_dir; do
+    for dir in "$lxd_dir" "$log_dir" "$lib_dir"; do
 	test -e "$dir" || {
             mkdir -p "$dir"
             chgrp $user_grp "$dir"
@@ -28,11 +33,36 @@ fix_perms() {
     ln -sf $lxd_dir/unix.socket $lib_dir/unix.socket
 }
 
+create_mounts() {
+    for dir in "$proc_dir" "$sys_dir"; do
+        test -e "$dir" || {
+            mkdir -p "$dir"
+        }
+    done
+    if ! grep -qs "$proc_dir" /proc/mounts; then
+        mount -t proc -o rw,nodev,nosuid,noexec proc "$proc_dir"
+    fi
+    if ! grep -qs "$sys_dir" /proc/mounts; then
+        mount -t sysfs -o rw,nodev,nosuid,noexec sysfs "$sys_dir"
+    fi
+}
+
+create_systemd_controller() {
+    test -e "$systemd_dir" || {
+        mkdir -p "$systemd_dir"
+    }
+    if ! grep -qs "$systemd_dir" /proc/mounts; then
+        mount -n -t cgroup -o none,name=systemd cgroup "$systemd_dir"
+    fi
+}
+
 start_service() {
     logger -t "lxd" "Starting service LXD ..."
     user_exists $user_grp 200 || user_add $user_grp 200
     group_exists $user_grp 200 || group_add $user_grp 200
     fix_perms
+    create_mounts
+    create_systemd_controller
     procd_open_instance
     # Binary "named": flag "-u" not working with threads
     # and disabled capabilities
