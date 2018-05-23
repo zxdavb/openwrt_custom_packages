@@ -126,7 +126,8 @@ echo "Create symlinks for server binaries..."
 ln -sf $(GO_ADDITIONAL_PACKAGES)/bin/lxd /usr/sbin/lxd
 ln -sf $(GO_ADDITIONAL_PACKAGES)/bin/lxd-benchmark /usr/bin/lxd-benchmark
 echo "Create 'sub{u,g}ids' for 'root' (LXD can run unprivileged containers)..."
-echo "root:1000000:65536" | tee -a /etc/subuid /etc/subgid
+echo "root:1000000:1000000000" | tee -a /etc/subuid /etc/subgid
+echo "lxd:1000000:1000000000" | tee -a /etc/subuid /etc/subgid
 echo "HINT: the '--group' sudo bit allows everyone to talk to LXD in the 'sudo' group"
 echo "IMPORTANT: LXD requires dnsmasq with dhcp ipv6 support for lxd-bridge"
 echo "           ('dnsmasq-dhcpv6' or 'dnsmasq-full')"
