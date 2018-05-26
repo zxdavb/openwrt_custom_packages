@@ -27,7 +27,7 @@ include $(INCLUDE_DIR)/package.mk
 #	github.com/google/gopacket/pcap github.com/google/gopacket/pfring \
 #	github.com/google/gopacket/afpacket github.com/gopacket/tcpassembly
 
-go_modules:=github.com/google/gopacket github.com/google/gopacket/layers \
+GO_PKG_MODULES:=github.com/google/gopacket github.com/google/gopacket/layers \
 	github.com/google/gopacket/pcap
 
 TAR_CMD:=$(HOST_TAR) -C $(PKG_BUILD_DIR) --strip-components 1 $(TAR_OPTIONS)
@@ -68,7 +68,7 @@ define Build/InstallDev
 endef
 
 define Package/golang-github.com-google-gopacket/install
-	$(call Package/GO/Install/Default,$(1))
+	$(call Package/GO/Install/Default,$(1),,,none)
 endef
 
 $(eval $(call BuildPackage,golang-github.com-google-gopacket))

@@ -60,7 +60,7 @@ endef
 
 define Build/Compile
 	$(call copy_go_source)
-	(cd $(GOPATH)/src/$(PKG_GO_IMPORT_PATH)/ && make install)
+	(cd $(GO_PKG_COMPILE_PATH) && make install)
 endef
 
 define Build/InstallDev

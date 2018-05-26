@@ -69,16 +69,16 @@ define Build/InstallDev
 	$(INSTALL_DIR) $(1)/usr/lib/$(GO_RELEASE_NAME)/pkg
 	$(CP) $(PKG_BUILD_DIR)/pkg/include $(1)/usr/lib/$(GO_RELEASE_NAME)/pkg/
 
-	$(CP) $(PKG_BUILD_DIR)/pkg/$(GO_ARCHITECTURE_PACKAGE) $(1)/usr/lib/$(GO_RELEASE_NAME)/pkg/
+	$(CP) $(PKG_BUILD_DIR)/pkg/$(GO_PACKAGES_ARCHITECTURE) $(1)/usr/lib/$(GO_RELEASE_NAME)/pkg/
 
 	$(CP) $(PKG_BUILD_DIR)/src $(1)/usr/lib/$(GO_RELEASE_NAME)/
 	$(CP) $(PKG_BUILD_DIR)/VERSION $(1)/usr/lib/$(GO_RELEASE_NAME)/
 
-	$(INSTALL_DIR) $(1)/usr/lib/$(GO_RELEASE_NAME)/pkg/obj/$(GO_ARCHITECTURE_PACKAGE)
+	$(INSTALL_DIR) $(1)/usr/lib/$(GO_RELEASE_NAME)/pkg/obj/$(GO_PACKAGES_ARCHITECTURE)
 	ln -srf $(1)/usr/lib/$(GO_RELEASE_NAME) $(1)/$(GOROOT_TARGET_FINAL)
-	$(INSTALL_DIR) $(1)/$(GO_ADDITIONAL_PACKAGES)/bin
-	$(INSTALL_DIR) $(1)/$(GO_ADDITIONAL_PACKAGES)/pkg/$(GO_ARCHITECTURE_PACKAGE)
-	$(INSTALL_DIR) $(1)/$(GO_ADDITIONAL_PACKAGES)/src
+	$(INSTALL_DIR) $(1)$(GO_PACKAGES_GOPATH)/bin
+	$(INSTALL_DIR) $(1)$(GO_PACKAGES_GOPATH)/pkg/$(GO_PACKAGES_ARCHITECTURE)
+	$(INSTALL_DIR) $(1)$(GO_PACKAGES_GOPATH)/src
 endef
 
 define Package/golang-1.8/install
@@ -92,28 +92,28 @@ define Package/golang-1.8/install
 	$(INSTALL_DIR) $(1)/usr/lib/$(GO_RELEASE_NAME)/pkg
 	$(CP) $(PKG_BUILD_DIR)/pkg/include $(1)/usr/lib/$(GO_RELEASE_NAME)/pkg/
 
-	$(CP) $(PKG_BUILD_DIR)/pkg/$(GO_ARCHITECTURE_PACKAGE) $(1)/usr/lib/$(GO_RELEASE_NAME)/pkg/
+	$(CP) $(PKG_BUILD_DIR)/pkg/$(GO_PACKAGES_ARCHITECTURE) $(1)/usr/lib/$(GO_RELEASE_NAME)/pkg/
 
 	$(INSTALL_DIR) $(1)/usr/lib/$(GO_RELEASE_NAME)/pkg/tool
-	$(CP) $(PKG_BUILD_DIR)/pkg/tool/$(GO_ARCHITECTURE_PACKAGE) $(1)/usr/lib/$(GO_RELEASE_NAME)/pkg/tool/
+	$(CP) $(PKG_BUILD_DIR)/pkg/tool/$(GO_PACKAGES_ARCHITECTURE) $(1)/usr/lib/$(GO_RELEASE_NAME)/pkg/tool/
 
 	$(CP) $(PKG_BUILD_DIR)/src $(1)/usr/lib/$(GO_RELEASE_NAME)/
 	$(CP) $(PKG_BUILD_DIR)/test $(1)/usr/lib/$(GO_RELEASE_NAME)/
 	$(CP) $(PKG_BUILD_DIR)/VERSION $(1)/usr/lib/$(GO_RELEASE_NAME)/
 
-	$(INSTALL_DIR) $(1)/usr/lib/$(GO_RELEASE_NAME)/pkg/obj/$(GO_ARCHITECTURE_PACKAGE)
+	$(INSTALL_DIR) $(1)/usr/lib/$(GO_RELEASE_NAME)/pkg/obj/$(GO_PACKAGES_ARCHITECTURE)
 
 ifneq ($(GOARCH),$(GOHOSTARCH))
-	$(CP) $(PKG_BUILD_DIR)/bin/$(GO_ARCHITECTURE_PACKAGE)/* $(1)/usr/lib/$(GO_RELEASE_NAME)/bin/
+	$(CP) $(PKG_BUILD_DIR)/bin/$(GO_PACKAGES_ARCHITECTURE)/* $(1)/usr/lib/$(GO_RELEASE_NAME)/bin/
 else
 	$(CP) $(PKG_BUILD_DIR)/bin/* $(1)/usr/lib/$(GO_RELEASE_NAME)/bin/
 endif
 	$(INSTALL_DIR) $(1)/usr/bin
 	ln -srf $(1)/$(GOROOT_TARGET_FINAL)/bin/go $(1)/usr/bin/go
 	ln -srf $(1)/$(GOROOT_TARGET_FINAL)/bin/gofmt $(1)/usr/bin/gofmt
-	$(INSTALL_DIR) $(1)/$(GO_ADDITIONAL_PACKAGES)/bin
-	$(INSTALL_DIR) $(1)/$(GO_ADDITIONAL_PACKAGES)/pkg/$(GO_ARCHITECTURE_PACKAGE)
-	$(INSTALL_DIR) $(1)/$(GO_ADDITIONAL_PACKAGES)/src
+	$(INSTALL_DIR) $(1)$(GO_PACKAGES_GOPATH)/bin
+	$(INSTALL_DIR) $(1)$(GO_PACKAGES_GOPATH)/pkg/$(GO_PACKAGES_ARCHITECTURE)
+	$(INSTALL_DIR) $(1)$(GO_PACKAGES_GOPATH)/src
 endef
 
 define Package/golang-1.8/postrm
@@ -122,7 +122,7 @@ rm -f /usr/bin/go
 rm -f /usr/bin/gofmt
 rm -rf /usr/lib/go
 rm -rf /usr/lib/$(GO_RELEASE_NAME)
-#rm -rf $(GO_ADDITIONAL_PACKAGES)
+#rm -rf $(GO_PACKAGES_GOPATH)
 endef
 
 $(eval $(call BuildPackage,golang-1.8))

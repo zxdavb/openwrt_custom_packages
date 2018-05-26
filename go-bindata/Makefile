@@ -5,7 +5,7 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=go-bindata
-PKG_VERSION:=current
+PKG_VERSION:=2018-05-26
 PKG_RELEASE:=1
 
 PKG_SOURCE_PROTO:=git
@@ -66,12 +66,26 @@ endef
 #endef
 
 define Host/Compile
-	$(call copy_go_source,host)
-	(cd $(GOPATH)/src/$(PKG_GO_IMPORT_PATH)/go-bindata && go build && go install)
+	$(call copy_go_source)
+	go env
+	@echo "Host / Compile"
+	@echo "--------------"
+	@echo "MAKE MAKECMDGOALS: $(filter-out host host-%,$$(MAKECMDGOALS))"
+	@echo "GOPATH: $(GOPATH)"
+	@echo "GOARCH: $(GOARCH)"
+	@echo "GO_PKG_CROSS_COMPILE: $(GO_PKG_CROSS_COMPILE)"
+	@echo "GO_PKG_GOPATH: $(GO_PKG_GOPATH)"
+	@echo "GO_PKG_BIN_PATH: $(GO_PKG_BIN_PATH)"
+	@echo "GO_PKG_PKG_PATH: $(GO_PKG_PKG_PATH)"
+	@echo "GO_PKG_SRC_PATH: $(GO_PKG_SRC_PATH)"
+	@echo "GO_PKG_BUILD_PATH: $(GO_PKG_BUILD_PATH)"
+	@echo "GO_PKG_COMPILE_PATH: $(GO_PKG_COMPILE_PATH)"
+	(cd $(GO_PKG_COMPILE_PATH)/go-bindata && go build && go install)
 endef
 
 define Host/Install
-	$(call Package/GO/Install/Default,$(1),,none,none)
+	go env
+	$(call Build/GO/Host/Install/Default,$(1),,none,none)
 endef
 
 #define Build/Prepare
@@ -84,7 +98,20 @@ endef
 
 define Build/Compile
 	$(call copy_go_source)
-	(cd $(GOPATH)/src/$(PKG_GO_IMPORT_PATH)/go-bindata && go-build && go install)
+	go env
+	@echo "Build / Compile"
+	@echo "--------------"
+	@echo "MAKE MAKECMDGOALS: $(filter-out host host-%,$$(MAKECMDGOALS))"
+	@echo "GOPATH: $(GOPATH)"
+	@echo "GOARCH: $(GOARCH)"
+	@echo "GO_PKG_CROSS_COMPILE: $(GO_PKG_CROSS_COMPILE)"
+	@echo "GO_PKG_GOPATH: $(GO_PKG_GOPATH)"
+	@echo "GO_PKG_BIN_PATH: $(GO_PKG_BIN_PATH)"
+	@echo "GO_PKG_PKG_PATH: $(GO_PKG_PKG_PATH)"
+	@echo "GO_PKG_SRC_PATH: $(GO_PKG_SRC_PATH)"
+	@echo "GO_PKG_BUILD_PATH: $(GO_PKG_BUILD_PATH)"
+	@echo "GO_PKG_COMPILE_PATH: $(GO_PKG_COMPILE_PATH)"
+	(cd $(GO_PKG_COMPILE_PATH)/go-bindata && go build && go install)
 endef
 
 define Build/InstallDev
@@ -92,6 +119,7 @@ define Build/InstallDev
 endef
 
 define Package/go-bindata/install
+	go env
 	$(call Package/GO/Install/Default,$(1),,none,none)
 endef
 

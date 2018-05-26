@@ -94,7 +94,7 @@ endef
 
 define Build/Compile
 	$(call copy_go_source)
-	(cd $(GOPATH)/src/$(PKG_GO_IMPORT_PATH)/ && make)
+	(cd $(GO_PKG_COMPILE_PATH) && make)
 endef
 
 define Build/InstallDev
@@ -123,8 +123,8 @@ endef
 define Package/lxd-server/postinst
 #!/bin/sh
 echo "Create symlinks for server binaries..."
-ln -sf $(GO_ADDITIONAL_PACKAGES)/bin/lxd /usr/sbin/lxd
-ln -sf $(GO_ADDITIONAL_PACKAGES)/bin/lxd-benchmark /usr/bin/lxd-benchmark
+ln -sf $(GO_PACKAGES_GOPATH)/bin/lxd /usr/sbin/lxd
+ln -sf $(GO_PACKAGES_GOPATH)/bin/lxd-benchmark /usr/bin/lxd-benchmark
 echo "Create 'sub{u,g}ids' for 'root' and 'lxd' (LXD can run unprivileged containers)..."
 echo "root:1000000:1000000000" | tee -a /etc/subuid /etc/subgid
 echo "lxd:1000000:1000000000" | tee -a /etc/subuid /etc/subgid
@@ -137,8 +137,8 @@ endef
 define Package/lxd-client/postinst
 #!/bin/sh
 echo "Create symlinks for user binaries..."
-ln -sf $(GO_ADDITIONAL_PACKAGES)/bin/lxc /usr/bin/lxc
-ln -sf $(GO_ADDITIONAL_PACKAGES)/bin/lxd-p2c /usr/bin/lxd-p2c
+ln -sf $(GO_PACKAGES_GOPATH)/bin/lxc /usr/bin/lxc
+ln -sf $(GO_PACKAGES_GOPATH)/bin/lxd-p2c /usr/bin/lxd-p2c
 endef
 
 # server postrm
