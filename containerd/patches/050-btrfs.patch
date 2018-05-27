@@ -1,0 +1,49 @@
+--- a/vendor/github.com/containerd/btrfs/btrfs.go
++++ b/vendor/github.com/containerd/btrfs/btrfs.go
+@@ -130,7 +130,7 @@ func subvolMap(path string) (map[uint64]
+ 		var (
+ 			sh     C.struct_btrfs_ioctl_search_header
+ 			shSize = unsafe.Sizeof(sh)
+-			buf    = (*[1<<31 - 1]byte)(unsafe.Pointer(&args.buf[0]))[:C.BTRFS_SEARCH_ARGS_BUFSIZE]
++			buf    = (*[(1<<31 - 1) / 4]byte)(unsafe.Pointer(&args.buf[0]))[:C.BTRFS_SEARCH_ARGS_BUFSIZE]
+ 		)
+ 
+ 		for i := 0; i < int(args.key.nr_items); i++ {
+@@ -271,7 +271,7 @@ func SubvolCreate(path string) error {
+ 	if len(name) > C.BTRFS_PATH_NAME_MAX {
+ 		return errors.Errorf("%q too long for subvolume", name)
+ 	}
+-	nameptr := (*[1<<31 - 1]byte)(unsafe.Pointer(&args.name[0]))
++	nameptr := (*[(1<<31 - 1) / 4]byte)(unsafe.Pointer(&args.name[0]))
+ 	copy(nameptr[:C.BTRFS_PATH_NAME_MAX], []byte(name))
+ 
+ 	if err := ioctl(fp.Fd(), C.BTRFS_IOC_SUBVOL_CREATE, uintptr(unsafe.Pointer(&args))); err != nil {
+@@ -307,7 +307,7 @@ func SubvolSnapshot(dst, src string, rea
+ 		return errors.Errorf("%q too long for subvolume", dstname)
+ 	}
+ 
+-	nameptr := (*[1<<31 - 1]byte)(unsafe.Pointer(name))
++	nameptr := (*[(1<<31 - 1) / 4]byte)(unsafe.Pointer(name))
+ 	copy(nameptr[:C.BTRFS_SUBVOL_NAME_MAX], []byte(dstname))
+ 
+ 	if readonly {
+@@ -366,7 +366,7 @@ func SubvolDelete(path string) error {
+ 		return errors.Errorf("%q too long for subvolume", name)
+ 	}
+ 
+-	nameptr := (*[1<<31 - 1]byte)(unsafe.Pointer(&args.name[0]))
++	nameptr := (*[(1<<31 - 1) / 4]byte)(unsafe.Pointer(&args.name[0]))
+ 	copy(nameptr[:C.BTRFS_SUBVOL_NAME_MAX], []byte(name))
+ 
+ 	if err := ioctl(fp.Fd(), C.BTRFS_IOC_SNAP_DESTROY, uintptr(unsafe.Pointer(&args))); err != nil {
+--- a/vendor/github.com/containerd/btrfs/helpers.go
++++ b/vendor/github.com/containerd/btrfs/helpers.go
+@@ -50,7 +50,7 @@ var (
+ )
+ 
+ func uuidString(uuid *[C.BTRFS_UUID_SIZE]C.u8) string {
+-	b := (*[1<<31 - 1]byte)(unsafe.Pointer(uuid))[:C.BTRFS_UUID_SIZE]
++	b := (*[(1<<31 - 1) / 4]byte)(unsafe.Pointer(uuid))[:C.BTRFS_UUID_SIZE]
+ 
+ 	if bytes.Equal(b, zeros) {
+ 		return ""
