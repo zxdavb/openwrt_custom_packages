@@ -1,0 +1,26 @@
+--- a/build/root/Makefile
++++ b/build/root/Makefile
+@@ -580,3 +580,23 @@ else
+ bazel-release:
+ 	bazel build //build/release-tars
+ endif
++
++define install_server_gopath
++	mkdir -p $(GOPATH)/$(GO_PKG_BIN_PATH)
++	(for binary in apiextensions-apiserver cloud-controller-manager hyperkube kube-aggregator \
++		kube-apiserver kube-controller-manager kube-proxy kube-scheduler kubeadm \
++		kubectl kubelet mounter ; do \
++		( cp -f _output/local/bin/$(1)/$(2)/$$binary \
++			$(GOPATH)/$(GO_PKG_BIN_PATH)/ ); \
++	done; )
++endef
++
++define install_client_gopath
++	mkdir -p $(GOPATH)/$(GO_PKG_BIN_PATH)
++	cp _output/local/bin/$(1)/$(2)/kubectl $(GOPATH)/$(GO_PKG_BIN_PATH)/
++endef
++
++install-gopath:
++	$(call install_server_gopath,$(GOOS),$(GOARCH))
++	$(call install_client_gopath,$(GOOS),$(GOARCH))
++

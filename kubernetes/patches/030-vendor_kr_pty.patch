@@ -1,0 +1,52 @@
+--- /dev/null
++++ b/vendor/github.com/kr/pty/ztypes_mips.go
+@@ -0,0 +1,9 @@
++// Created by cgo -godefs - DO NOT EDIT
++// cgo -godefs types.go
++
++package pty
++
++type (
++	_C_int  int32
++	_C_uint uint32
++)
+--- /dev/null
++++ b/vendor/github.com/kr/pty/ztypes_mips64.go
+@@ -0,0 +1,11 @@
++// Created by cgo -godefs - DO NOT EDIT
++// cgo -godefs types.go
++
++// +build mips64
++
++package pty
++
++type (
++	_C_int  int32
++	_C_uint uint32
++)
+--- /dev/null
++++ b/vendor/github.com/kr/pty/ztypes_mips64le.go
+@@ -0,0 +1,11 @@
++// Created by cgo -godefs - DO NOT EDIT
++// cgo -godefs types.go
++
++// +build mips64le
++
++package pty
++
++type (
++	_C_int  int32
++	_C_uint uint32
++)
+--- /dev/null
++++ b/vendor/github.com/kr/pty/ztypes_mipsle.go
+@@ -0,0 +1,9 @@
++// Created by cgo -godefs - DO NOT EDIT
++// cgo -godefs types.go
++
++package pty
++
++type (
++	_C_int  int32
++	_C_uint uint32
++)
