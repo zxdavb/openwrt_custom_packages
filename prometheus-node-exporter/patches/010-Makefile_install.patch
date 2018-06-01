@@ -1,0 +1,45 @@
+--- a/Makefile
++++ b/Makefile
+@@ -39,7 +39,7 @@ endif
+ ifeq ($(GOHOSTARCH),amd64)
+ 	ifeq ($(OS_detected),$(filter $(OS_detected),Linux FreeBSD Darwin Windows))
+                 # Only supported on amd64
+-                test-flags := -race
++                #test-flags := -race
+         endif
+ endif
+ 
+@@ -73,7 +73,7 @@ $(eval $(call goarch_pair,amd64,386))
+ $(eval $(call goarch_pair,mips64,mips))
+ $(eval $(call goarch_pair,mips64el,mipsel))
+ 
+-all: style vet staticcheck checkmetrics build test $(cross-test) $(test-e2e)
++all: style vet staticcheck checkmetrics build $(cross-test)
+ 
+ style:
+ 	@echo ">> checking code style"
+@@ -81,6 +81,7 @@ style:
+ 
+ test: collector/fixtures/sys/.unpacked
+ 	@echo ">> running tests"
++	ln -sf $(STAGING_DIR_ROOT)/lib/ld-* .
+ 	$(GO) test -short $(test-flags) $(pkgs)
+ 
+ test-32bit: collector/fixtures/sys/.unpacked
+@@ -155,3 +156,16 @@ $(GOPATH)/bin/staticcheck:
+ # If this is not desired, copy/symlink these binaries to a different path and
+ # set the respective environment variables.
+ .PHONY: $(GOPATH)/bin/promtool $(GOPATH)/bin/promu $(GOPATH)/bin/staticcheck
++
++define install_binaries_gopath
++	mkdir -p $(GOPATH)/$(GO_PKG_BIN_PATH)
++	(for binary in node_exporter ; do \
++		( @echo "$$binary"; cp -f ./$$binary \
++			$(GOPATH)/$(GO_PKG_BIN_PATH)/ ); \
++	done; )
++endef
++
++.PHONY: install-gopath
++install-gopath:
++	@echo ">> installing binaries in GOPATH"
++	$(call install_binaries_gopath,$(GOOS),$(GOARCH))

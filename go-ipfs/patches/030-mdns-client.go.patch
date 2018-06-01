@@ -1,0 +1,16 @@
+--- /dev/null
++++ b/gx-patches/mdns_client.go.patch
+@@ -0,0 +1,13 @@
++--- client.go.old	2018-05-31 12:44:41.534510935 +0200
+++++ client.go	2018-05-31 12:45:30.269556285 +0200
++@@ -8,8 +8,8 @@
++ 	"sync"
++ 	"time"
++ 
++-	"gx/ipfs/QmTEmsyNnckEq8rEfALfdhLHjrEHGoSGFDrAYReuetn7MC/go-net/ipv4"
++-	"gx/ipfs/QmTEmsyNnckEq8rEfALfdhLHjrEHGoSGFDrAYReuetn7MC/go-net/ipv6"
+++	"golang.org/x/net/ipv4"
+++	"golang.org/x/net/ipv6"
++ 	"gx/ipfs/QmWchsfMt9Re1CQaiHqPQC1DrZ9bkpa6n229dRYkGyLXNh/dns"
++ )
++ 

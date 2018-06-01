@@ -44,8 +44,8 @@ define Package/runc
 	SUBMENU:=Golang
 	SECTION:=lang
 	CATEGORY:=Languages
-	TITLE:=runc v$(PKG_VERSION) - CLI tool for spawning and running contaiers
-	URL:=http://lxd-phabricator03.lxd.mammoth.home/source/skydive_local.git
+	TITLE:=v$(PKG_VERSION) - CLI tool for spawning and running containers
+	URL:=http://opencontainers.org
 	MAINTAINER:=Manfred Gschweidl <m.gschweidl@gmail.com>
 	#DEPENDS:=+libpcap +libxml2 +golang-github.com-google-gopacket
 	DEPENDS:=
@@ -53,8 +53,9 @@ define Package/runc
 endef
 
 define Package/runc/description
-	runc is a CLI tool for spawning and running containers according
-	to the OCI specification
+ runc is a CLI tool for spawning and running containers according
+to the OCI specification
+
 endef
 
 #define Build/Prepare

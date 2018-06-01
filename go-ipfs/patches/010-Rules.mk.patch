@@ -1,0 +1,31 @@
+--- a/Rules.mk
++++ b/Rules.mk
+@@ -114,8 +114,27 @@ install_unsupported:
+ 	gx -v && gx-go -v
+ 	@echo downloading dependencies
+ 	gx install --global
++	@echo "--------------------"
++	@echo "patching gx packages"
++	@echo "--------------------"
++	@echo "patching go-net"
++	patch -p0 -d ../../../gx/ipfs/QmTEmsyNnckEq8rEfALfdhLHjrEHGoSGFDrAYReuetn7MC/ < gx-patches/go-net.patch
++	@echo "patching mdns"
++	patch -p0 -d  ../../../gx/ipfs/QmWSvDKkcno2UyDg13rUBwWfhRsdj7uR3daAq57VoG5QeN/mdns/ < gx-patches/mdns_client.go.patch
++	@echo "--------------------"
++	@echo "patching of gx packages done"
++	@echo "--------------------"
++	@echo "installing additional packages"
++	@echo "-------------------"
++	@echo "golang.org/x/net"
++	go get -u golang.org/x/net/...
++	@echo "-------------------"
++	@echo "instaling additional packages done"
++	@echo "--------------------"
+ 	@echo "installing go-ipfs"
+-	go install -v -tags nofuse ./cmd/ipfs
++	# go install -v -tags nofuse ./cmd/ipfs
++	go install -v -x -buildmode=exe -ldflags '-extldflags "-static"' -tags nofuse ./cmd/ipfs
++
+ .PHONY: install_unsupported
+ 
+ uninstall:

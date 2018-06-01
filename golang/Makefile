@@ -37,7 +37,7 @@ define Package/golang
 	SUBMENU:=Golang
 	SECTION:=lang
 	CATEGORY:=Languages
-	TITLE:=Golang $(PKG_VERSION) compiler and runtime
+	TITLE:=$(PKG_VERSION) compiler and runtime
 	URL:=https://golang.org
 	MAINTAINER:=Manfred Gschweidl <m.gschweidl@gmail.com>
 	DEPENDS:=+libc +libpthread
@@ -45,7 +45,7 @@ define Package/golang
 endef
 
 define Package/golang/description
-	GO compiler and runtime package version $(PKG_VERSION)
+ GO compiler and runtime package version $(PKG_VERSION)
 endef
 
 # GO_GCFLAGS=$(GO_GCFLAGS) GO_LDFLAGS=$(GO_LDFLAGS)

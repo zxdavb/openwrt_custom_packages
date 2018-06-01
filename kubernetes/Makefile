@@ -47,7 +47,7 @@ define Package/kubernetes/Default
 	SUBMENU:=Golang
 	SECTION:=lang
 	CATEGORY:=Languages
-	TITLE:=Kubernetes v$(PKG_VERSION)
+	TITLE:=v$(PKG_VERSION)
 	URL:=http://kubernetes.io/
 	MAINTAINER:=Manfred Gschweidl <m.gschweidl@gmail.com>
 	#DEPENDS:=+libpcap +libxml2 +golang-github.com-google-gopacket
@@ -57,9 +57,9 @@ endef
 
 # Package descriptions
 define Package/kubernetes/description/Default
-	Kubernetes is an open source system for managing containerized applications across
-	multiple hosts; providing basic mechanisms for deployment, maintenance, and scaling
-	of applications.
+ Kubernetes is an open source system for managing containerized applications across
+multiple hosts; providing basic mechanisms for deployment, maintenance, and scaling
+of applications.
 endef
 
 define Package/kubernetes-server/description
@@ -101,7 +101,6 @@ endef
 define Build/Compile
 	$(call copy_go_source)
 	# KUBE_RELEASE_RUN_TESTS=n KUBE_FASTBUILD=true => make quick-release / make release-skip-tests
-#	(cd $(GO_PKG_COMPILE_PATH) && KUBE_BUILD_PLATFORMS="$(GOOS)/$(GOHOSTARCH)" ./hack/make-rules/build.sh ./vendor/k8s.io/code-generator/cmd/openapi-gen)
 	(cd $(GO_PKG_COMPILE_PATH) && make generated_files)
 	(cd $(GO_PKG_COMPILE_PATH) && KUBE_BUILD_PLATFORMS="$(GOOS)/$(GOARCH)" make)
 	(cd $(GO_PKG_COMPILE_PATH) && GO_PKG_BIN_PATH="$(GO_PKG_BIN_PATH)" make install-gopath)
@@ -109,7 +108,7 @@ endef
 
 # Dev Installation
 define Build/InstallDev
-	# $(call Build/GO/InstallDev/Default,$(1))
+	# $(call Build/GO/InstallDev/Default,$(1),none)
 endef
 
 # Package installations

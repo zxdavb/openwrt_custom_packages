@@ -1,0 +1,25 @@
+--- a/GNUmakefile
++++ b/GNUmakefile
+@@ -99,6 +99,22 @@ pkg/linux_arm64/nomad: $(SOURCE_FILES) #
+ 		-tags "$(GO_TAGS)" \
+ 		-o "$@"
+ 
++pkg/linux_mips/nomad pkg/linux_mipsle/nomad pkg/linux_mips64/nomad pkg/linux_mips64le/nomad: $(SOURCE_FILES) ## Build Nomad for openwrt any mips
++	@echo "==> Building $@ with tags $(GO_TAGS)..."
++	@CGO_ENABLED=1 GOOS=$(GOOS) GOARCH=$(GOARCH) \
++		go build \
++		-ldflags $(GO_LDFLAGS) \
++		-tags "$(GO_TAGS)" \
++		-o "$@"
++
++pkg/linux_mips-lxc/nomad pkg/linux_mipsle-lxc/nomad pkg/linux_mips64-lxc/nomad pkg/linux_mips64le-lxc/nomad: $(SOURCE_FILES) ## Build Nomad for openwrt any mips and lxc
++	@echo "==> Building $@ with tags $(GO_TAGS)..."
++	@CGO_ENABLED=1 GOOS=$(GOOS) GOARCH=$(GOARCH) \
++		go build \
++		-ldflags $(GO_LDFLAGS) \
++		-tags "$(GO_TAGS) lxc" \
++		-o "$@"
++
+ # If CGO support for Windows is ever required, set the following variables
+ # in the environment for `go build` for both the windows/amd64 and the
+ # windows/386 targets:

@@ -43,7 +43,7 @@ define Package/go-bindata
 	SUBMENU:=Golang
 	SECTION:=lang
 	CATEGORY:=Languages
-	TITLE:=go-bindata v$(PKG_VERSION)
+	TITLE:=v$(PKG_VERSION)
 	URL:=https://github.com/jteeuwen/go-bindata
 	MAINTAINER:=Manfred Gschweidl <m.gschweidl@gmail.com>
 	#DEPENDS:=+libpcap +libxml2 +golang-github.com-google-gopacket
@@ -52,13 +52,13 @@ define Package/go-bindata
 endef
 
 define Package/go-bindata/description
-	This package converts any file into managable Go source code. Useful
-	for embedding binary data into a go program. The file data is
-	optionally gzip compressed before being converted to a raw byte slice.
+ This package converts any file into managable Go source code. Useful
+for embedding binary data into a go program. The file data is
+optionally gzip compressed before being converted to a raw byte slice.
 
-	It comes with a command line tool in the go-bindata sub directory.
-	This tool offers a set of command line options, used to customize the
-	output being generated.
+It comes with a command line tool in the go-bindata sub directory.
+This tool offers a set of command line options, used to customize the
+output being generated.
 endef
 
 #define Host/Configure

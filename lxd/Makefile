@@ -62,30 +62,32 @@ define Package/lxd/Default
 endef
 
 define Package/lxd-server
-$(call Package/lxd/Default)
-  TITLE+= server
-  DEPENDS=+libacl +acl +lxc +liblxc \
+	$(call Package/lxd/Default)
+	TITLE+= server
+	DEPENDS=+libacl +acl +lxc +liblxc \
 	  +squashfs-tools-unsquashfs +xz +xz-utils \
 	  +shadow-newuidmap +shadow-newgidmap +tar \
 	  +rsync
 endef
 
 define Package/lxd-server/description
-	System container manager using linux containers
-	LXD daemon (server) package
+ System container manager using linux containers
+LXD daemon (server) package
 
-	NOTE: LXD requires dnsmasq with ipv6 support for dhcp.
-	dnsmasq-dhcpv6 or dnsmasq-full
+NOTE: LXD requires dnsmasq with ipv6 support for dhcp.
+dnsmasq-dhcpv6 or dnsmasq-full
+
 endef
 
 define Package/lxd-client
-$(call Package/lxd/Default)
-  TITLE+= client
+	$(call Package/lxd/Default)
+	TITLE+= client
 endef
 
 define Package/lxd-client/description
-	System container manager using linux containers
-	LXD client tools
+ System container manager using linux containers
+LXD client tools
+
 endef
 
 #define Build/Prepare

@@ -36,13 +36,13 @@ include $(INCLUDE_DIR)/package.mk
 #go_modules:=github.com/google/gopacket github.com/google/gopacket/layers \
 #	github.com/google/gopacket/pcap
 
-TAR_CMD:=$(HOST_TAR) -C $(PKG_BUILD_DIR) --strip-components 1 $(TAR_OPTIONS)
+TAR_CMD=$(HOST_TAR) -C $(1) --strip-components 1 $(TAR_OPTIONS)
 
 define Package/aptly
 	SUBMENU:=Golang
 	SECTION:=lang
 	CATEGORY:=Languages
-	TITLE:=Atply v$(PKG_VERSION) - Debian Repository Management
+	TITLE:=v$(PKG_VERSION) - Debian Repository Management
 	URL:=http://lxd-phabricator03.lxd.mammoth.home/source/skydive_local.git
 	MAINTAINER:=Manfred Gschweidl <m.gschweidl@gmail.com>
 	#DEPENDS:=+libpcap +libxml2 +golang-github.com-google-gopacket

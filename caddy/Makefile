@@ -33,7 +33,7 @@ define Package/caddy
 	SUBMENU:=Golang
 	SECTION:=lang
 	CATEGORY:=Languages
-	TITLE:=caddy v$(PKG_VERSION) - general-purpose HTTP/2 web server
+	TITLE:=v$(PKG_VERSION) - general-purpose HTTP/2 web server
 	URL:=https://caddyserver.com
 	MAINTAINER:=Manfred Gschweidl <m.gschweidl@gmail.com>
 	#DEPENDS:=+libpcap +libxml2 +golang-github.com-google-gopacket
@@ -42,9 +42,9 @@ define Package/caddy
 endef
 
 define Package/caddy/description
-	Caddy is a general-purpose HTTP/2 web server that serves HTTPS by default.
-	A lot of plugins are available for different aspects. See homepage
-	for a list.
+ Caddy is a general-purpose HTTP/2 web server that serves HTTPS by default.
+A lot of plugins are available for different aspects. See homepage
+for a list.
 endef
 
 #define Build/Prepare

@@ -40,7 +40,7 @@ define Package/containerd
 	SUBMENU:=Golang
 	SECTION:=lang
 	CATEGORY:=Languages
-	TITLE:=containerd v$(PKG_VERSION) - An open reliable container runtime
+	TITLE:=v$(PKG_VERSION) - An open reliable container runtime
 	URL:=https://containerd.io
 	MAINTAINER:=Manfred Gschweidl <m.gschweidl@gmail.com>
 	#DEPENDS:=+libpcap +libxml2 +golang-github.com-google-gopacket
@@ -48,12 +48,12 @@ define Package/containerd
 	#DEFAULT:=n
 endef
 
-define Package/cotnainerd/description
-	containerd is an industry-standard container runtime with an emphasis
-	on simplicity, robustness and portability. It is available as a daemon
-	for Linux and Windows, which can manage the complete container lifecycle
-	of its host system: image transfer and storage, container execution
-	and supervision, low-level storage and network attachments, etc.
+define Package/containerd/description
+ containerd is an industry-standard container runtime with an emphasis
+on simplicity, robustness and portability. It is available as a daemon
+for Linux and Windows, which can manage the complete container lifecycle
+of its host system: image transfer and storage, container execution
+and supervision, low-level storage and network attachments, etc.
 endef
 
 #define Build/Prepare
