@@ -1,0 +1,29 @@
+--- a/build.go
++++ b/build.go
+@@ -47,6 +47,7 @@ var (
+ 	installSuffix string
+ 	pkgdir        string
+ 	debugBinary   bool
++	nogobin       bool
+ )
+ 
+ type target struct {
+@@ -360,6 +361,7 @@ func parseFlags() {
+ 	flag.StringVar(&installSuffix, "installsuffix", installSuffix, "Install suffix, optional")
+ 	flag.StringVar(&pkgdir, "pkgdir", "", "Set -pkgdir parameter for `go build`")
+ 	flag.BoolVar(&debugBinary, "debug-binary", debugBinary, "Create unoptimized binary to use with delve, set -gcflags='-N -l' and omit -ldflags")
++	flag.BoolVar(&nogobin, "no-gobin", false, "Do not set GOBIN env variable")
+ 	flag.Parse()
+ }
+ 
+@@ -421,7 +423,9 @@ func install(target target, tags []strin
+ 	if err != nil {
+ 		log.Fatal(err)
+ 	}
+-	os.Setenv("GOBIN", filepath.Join(cwd, "bin"))
++	if !nogobin {
++		os.Setenv("GOBIN", filepath.Join(cwd, "bin"))
++	}
+ 
+ 	args := []string{"install", "-v"}
+ 	args = appendParameters(args, tags, target)

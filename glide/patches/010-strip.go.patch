@@ -1,0 +1,29 @@
+--- a/path/strip.go
++++ b/path/strip.go
+@@ -25,16 +25,17 @@ func StripVendor() error {
+ 			return nil
+ 		}
+ 
+-		name := info.Name()
+-		if name == "vendor" {
+-			if _, err := os.Stat(path); err == nil {
+-				if info.IsDir() {
+-					msg.Info("Removing: %s", path)
+-					return CustomRemoveAll(path)
+-				}
++		if info != nil {
++			if name := info.Name(); name == "vendor" {
++				if _, err := os.Stat(path); err == nil {
++					if info.IsDir() {
++						msg.Info("Removing: %s", path)
++						return CustomRemoveAll(path)
++					}
+ 
+-				msg.Debug("%s is not a directory. Skipping removal", path)
+-				return nil
++					msg.Debug("%s is not a directory. Skipping removal", path)
++					return nil
++				}
+ 			}
+ 		}
+ 		return nil

@@ -1,0 +1,11 @@
+--- a/pkg/loopback/loopback.go
++++ b/pkg/loopback/loopback.go
+@@ -53,7 +53,7 @@ func FindLoopDeviceFor(file *os.File) *o
+ 		}
+ 
+ 		dev, inode, err := getLoopbackBackingFile(file)
+-		if err == nil && dev == targetDevice && inode == targetInode {
++		if err == nil && dev == uint64(targetDevice) && inode == targetInode {
+ 			return file
+ 		}
+ 		file.Close()
