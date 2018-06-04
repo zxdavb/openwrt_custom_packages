@@ -50,7 +50,6 @@ define Host/Compile
 endef
 
 define Host/Install
-	go env
 	$(call Build/GO/Host/Install/Default,$(1),,none,none)
 endef
 
