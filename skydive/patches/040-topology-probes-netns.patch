@@ -1,0 +1,20 @@
+--- a/topology/probes/netns/netns.go
++++ b/topology/probes/netns/netns.go
+@@ -130,7 +130,7 @@ func (u *NetNSProbe) Register(path strin
+ 		return nil, fmt.Errorf("Failed to stat namespace %s: %s", path, err.Error())
+ 	}
+ 
+-	newns := &NetNs{path: path, dev: stats.Dev, ino: stats.Ino}
++	newns := &NetNs{path: path, dev: uint64(stats.Dev), ino: stats.Ino}
+ 
+ 	// avoid hard link to root ns
+ 	if u.rootNs.Equal(newns) {
+@@ -295,7 +295,7 @@ func NewNetNSProbe(g *graph.Graph, n *gr
+ 	if err = syscall.Fstat(int(ns), &stats); err != nil {
+ 		return nil, errors.New("Failed to stat root namespace")
+ 	}
+-	rootNs := &NetNs{dev: stats.Dev, ino: stats.Ino}
++	rootNs := &NetNs{dev: uint64(stats.Dev), ino: stats.Ino}
+ 
+ 	watcher, err := fsnotify.NewWatcher()
+ 	if err != nil {

@@ -1,0 +1,26 @@
+--- /dev/null
++++ b/vendor-patches/lxd-shared-util_linux.go.patch
+@@ -0,0 +1,13 @@
++--- vendor/github.com/lxc/lxd/shared/util_linux.go.old	2018-06-04 10:31:15.087512582 +0200
+++++ vendor/github.com/lxc/lxd/shared/util_linux.go	2018-06-04 10:31:45.446888497 +0200
++@@ -328,8 +328,8 @@
++ 	major = -1
++ 	minor = -1
++ 	if stat.Mode&syscall.S_IFBLK != 0 || stat.Mode&syscall.S_IFCHR != 0 {
++-		major = Major(stat.Rdev)
++-		minor = Minor(stat.Rdev)
+++		major = Major(uint64(stat.Rdev))
+++		minor = Minor(uint64(stat.Rdev))
++ 	}
++ 
++ 	return
+--- a/Makefile
++++ b/Makefile
+@@ -254,6 +254,7 @@ govendor:
+ 	go get github.com/kardianos/govendor
+ 	$(GOVENDOR) sync
+ 	patch -p0 < dpdk/dpdk.govendor.patch
++	patch -p0 < vendor-patches/lxd-shared-util_linux.go.patch
+ 	rm -rf vendor/github.com/weaveworks/tcptracer-bpf/vendor/github.com/
+ 
+ fmt: govendor genlocalfiles
