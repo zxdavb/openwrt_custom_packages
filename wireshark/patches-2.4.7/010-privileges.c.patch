@@ -1,6 +1,6 @@
 --- a/wsutil/privileges.c
 +++ b/wsutil/privileges.c
-@@ -10,7 +10,7 @@
+@@ -22,7 +22,7 @@
  
  #include "config.h"
  

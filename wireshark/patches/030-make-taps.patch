@@ -1,0 +1,15 @@
+--- a/ui/Makefile.am
++++ b/ui/Makefile.am
+@@ -180,6 +180,12 @@ make_taps_LDADD = \
+ 	$(GLIB_LIBS)	\
+ 	${top_builddir}/wsutil/libwsutil.la
+ 
++make_taps_LDFLAGS = -Wl,-rpath,$(STAGING_DIR)/lib \
++		    -Wl,-rpath,$(STAGING_DIR)/usr/lib \
++		    -L$(STAGING_DIR)/lib \
++		    -L$(STAGING_DIR)/usr/lib \
++		    -Wl,--dynamic-linker=$(STAGING_DIR)/lib/loader
++
+ CLEANFILES = \
+ 	doxygen-ui.tag
+ 
