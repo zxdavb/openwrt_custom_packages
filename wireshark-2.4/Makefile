@@ -7,15 +7,12 @@
 
 include $(TOPDIR)/rules.mk
 
-PKG_NAME:=wireshark
+PKG_NAME:=wireshark-2.4
 PKG_VERSION:=2.4.7
 PKG_RELEASE:=1
 
-PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
+PKG_SOURCE:=wireshark-$(PKG_VERSION).tar.gz
 PKG_SOURCE_URL:=https://github.com/wireshark/wireshark/archive/
-# 2.2.15
-#PKG_HASH:=701403ff3deb7b7370869029c610c701f350a9305d829a480711d30b9ebf1aaf
-# 2.4.7
 PKG_HASH:=2211b4f37dcbb636de99ff15feb7300d2408e4e43003b75496576325f3dcda5c
 
 PKG_LICENSE:=MIT
@@ -25,15 +22,15 @@ PKG_FIXUP:=autoreconf
 
 include $(INCLUDE_DIR)/package.mk
 
-TAR_CMD:=$(HOST_TAR) -C $(PKG_BUILD_DIR) --strip-components 1 $(TAR_OPTIONS)
+TAR_CMD=$(HOST_TAR) -C $(1) --strip-components 1 $(TAR_OPTIONS)
 
-define Package/wireshark
-  SECTION:=net
-  CATEGORY:=Network
-  # DEPENDS:=+librt +libcap +glib2 +tcpdump +libc @TARGET_x86
-  DEPENDS:=+librt +libcap +glib2 +tcpdump +libc +libcares +libgcrypt +libgnutls +libxml2
-  URL:=http://www.wireshark.org/
-  TITLE:=Network monitoring and data  tool
+define Package/wireshark-2.4
+	SECTION:=net
+	CATEGORY:=Network
+	TITLE:=Network monitoring and data tool
+	URL:=http://www.wireshark.org/
+	MAINTAINER:=Manfred Gschweidl <m.gschweidl@gmail.com>
+	DEPENDS:=+librt +libcap +glib2 +tcpdump +libc +libcares +libgcrypt +libgnutls +libxml2
 endef
 
 CONFIGURE_ARGS+= \
@@ -60,6 +57,7 @@ CONFIGURE_ARGS+= \
 	--with-gcrypt \
 	--with-gnutls \
 	--with-libxml2=no \
+	--without-libxml2 \
 	--without-lz4 \
 	--disable-udpdump
 
@@ -86,7 +84,7 @@ define Build/Compile
 		install
 endef
 
-define Package/wireshark/install
+define Package/wireshark-2.4/install
 	$(INSTALL_DIR) $(1)/usr/bin
 	$(INSTALL_BIN) $(PKG_INSTALL_DIR)/usr/bin/tshark $(1)/usr/bin/
 	$(INSTALL_BIN) $(PKG_INSTALL_DIR)/usr/bin/captype $(1)/usr/bin/
@@ -98,4 +96,4 @@ define Package/wireshark/install
 #	$(CP) $(PKG_INSTALL_DIR)/usr/lib/wireshark/plugins/$(PKG_VERSION)/*.so $(1)/usr/lib
 endef
 
-$(eval $(call BuildPackage,wireshark))
+$(eval $(call BuildPackage,wireshark-2.4))

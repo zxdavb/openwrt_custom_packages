@@ -7,18 +7,13 @@
 
 include $(TOPDIR)/rules.mk
 
-PKG_NAME:=wireshark
-PKG_VERSION:=2.6.1
+PKG_NAME:=wireshark-2.2
+PKG_VERSION:=2.2.15
 PKG_RELEASE:=1
 
-PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
+PKG_SOURCE:=wireshark-$(PKG_VERSION).tar.gz
 PKG_SOURCE_URL:=https://github.com/wireshark/wireshark/archive/
-# 2.2.15
-#PKG_HASH:=701403ff3deb7b7370869029c610c701f350a9305d829a480711d30b9ebf1aaf
-# 2.4.7
-#PKG_HASH:=2211b4f37dcbb636de99ff15feb7300d2408e4e43003b75496576325f3dcda5c
-# 2.6.1
-PKG_HASH:=89777fe21da7f1b4616c6e9a750f6d06a9424b438059be1e41c37d13d6d8a626
+PKG_HASH:=701403ff3deb7b7370869029c610c701f350a9305d829a480711d30b9ebf1aaf
 
 PKG_LICENSE:=MIT
 PKG_LICENSE_FILES:=COPYING
@@ -27,15 +22,15 @@ PKG_FIXUP:=autoreconf
 
 include $(INCLUDE_DIR)/package.mk
 
-TAR_CMD:=$(HOST_TAR) -C $(PKG_BUILD_DIR) --strip-components 1 $(TAR_OPTIONS)
+TAR_CMD=$(HOST_TAR) -C $(1) --strip-components 1 $(TAR_OPTIONS)
 
-define Package/wireshark
+define Package/wireshark-2.2
 	SECTION:=net
 	CATEGORY:=Network
 	TITLE:=Network monitoring and data tool
-	URL:=http://www.wireshark.org/
+	URL:=https://www.wireshark.org
 	MAINTAINER:=Manfred Gschweidl <m.gschweidl@gmail.com>
-	DEPENDS:=+librt +libcap +glib2 +tcpdump +libc +libcares +libgcrypt +libgnutls +libxml2 +liblz4
+	DEPENDS:=+librt +libcap +glib2 +tcpdump +libc +libcares +libgcrypt +libgnutls
 endef
 
 CONFIGURE_ARGS+= \
@@ -60,10 +55,7 @@ CONFIGURE_ARGS+= \
 	--disable-randpkt \
 	--with-c-ares \
 	--with-gcrypt \
-	--with-gnutls \
-	--with-libxml2=yes \
-	--with-lz4 \
-	--disable-udpdump
+	--with-gnutls
 
 TARGET_CFLAGS += -ffunction-sections -fdata-sections
 TARGET_LDFLAGS += -Wl,--gc-sections
@@ -81,18 +73,14 @@ MAKE_FLAGS += \
 	CCOPT="$(TARGET_CFLAGS)" INCLS="-I. $(TARGET_CPPFLAGS)"
 
 define Build/Compile
-	$(LN) -sf $(STAGING_DIR_ROOT)/lib/ld* $(STAGING_DIR)/lib/loader
-	$(LN) -sf $(STAGING_DIR_ROOT)/lib/libgcc*.so* $(STAGING_DIR)/lib/
 	cd $(PKG_BUILD_DIR)/tools/lemon&&make
 	$(MAKE) $(PKG_JOBS) -C $(PKG_BUILD_DIR) \
 		DESTDIR="$(PKG_INSTALL_DIR)" \
 		CC="$(TARGET_CC)" \
 		install
-	rm -f $(STAGING_DIR)/lib/loader
-	rm -f $(STAGING_DIR)/lib/libgcc*.so*
 endef
 
-define Package/wireshark/install
+define Package/wireshark-2.2/install
 	$(INSTALL_DIR) $(1)/usr/bin
 	$(INSTALL_BIN) $(PKG_INSTALL_DIR)/usr/bin/tshark $(1)/usr/bin/
 	$(INSTALL_BIN) $(PKG_INSTALL_DIR)/usr/bin/captype $(1)/usr/bin/
@@ -104,4 +92,4 @@ define Package/wireshark/install
 #	$(CP) $(PKG_INSTALL_DIR)/usr/lib/wireshark/plugins/$(PKG_VERSION)/*.so $(1)/usr/lib
 endef
 
-$(eval $(call BuildPackage,wireshark))
+$(eval $(call BuildPackage,wireshark-2.2))
