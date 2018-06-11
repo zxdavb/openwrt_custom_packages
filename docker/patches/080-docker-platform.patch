@@ -1,8 +1,0 @@
---- a/pkg/platform/utsname_int8.go
-+++ b/pkg/platform/utsname_int8.go
-@@ -1,4 +1,4 @@
--// +build linux,386 linux,amd64 linux,arm64
-+// +build linux,386 linux,amd64 linux,arm64 linux,mips linux,mipsle linux,mips64 linux,mips64le
- // see golang's sources src/syscall/ztypes_linux_*.go that use int8
- 
- package platform
