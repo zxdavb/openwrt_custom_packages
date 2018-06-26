@@ -47,6 +47,10 @@ ifneq (,$(filter $(patsubst "%",%,$(CONFIG_ARCH)),arm))
   endif
 endif
 
+ifneq (,$(filter $(patsubst "%",%,$(CONFIG_ARCH)),mipsel))
+  PKG_ARCH=1004K
+endif
+
 define Host/Compile
 	$(MAKE) -C $(HOST_BUILD_DIR) \
 		BUILD_RELAPACK=1
