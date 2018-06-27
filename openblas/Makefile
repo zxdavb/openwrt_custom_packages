@@ -16,6 +16,8 @@ PKG_SOURCE_VERSION:=v$(PKG_VERSION)
 PKG_SOURCE_DATE:=2018-05-23
 PKG_MIRROR_HASH:=adba62c0968bbf032649314e6f322cd83154028950ccfb90ad9494527534b9d9
 
+PKG_USE_MIPS16:=0
+
 include $(INCLUDE_DIR)/host-build.mk
 include $(INCLUDE_DIR)/package.mk
 
@@ -68,7 +70,7 @@ define Build/Compile
 		HOSTCC="$(HOSTCC_NOCACHE)"		\
 		CC="$(TARGET_CC)"			\
 		FC="$(TARGET_CROSS)gfortran"		\
-		TARGET=$(PKG_ARCH)
+		TARGET="$(PKG_ARCH)"
 endef
 
 define Build/InstallDev
