@@ -1,6 +1,4 @@
-This is a custom feed of **LXC v3.1.0** for OpenWrt v18.06
-
-I am not yet sure if it works, but to use it with your buildroot:
+This is a custom feed of **LXC v3.1.0** for OpenWrt v18.06. I am not yet sure if it works, but to use it with your buildroot:
 ```
 git clone https://github.com/zxdavb/openwrt_custom_packages
 
