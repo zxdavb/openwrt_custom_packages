@@ -1,10 +1,6 @@
 This is a custom feed of **LXC v3.1.0** for OpenWrt v18.06
 
 I am not yet sure if it works, but to use it with your buildroot:
-a) add the custom feed to you feeds.conf
-b) use my feed's LXC instead of the 'offical' feed
-
-One way to achieve the above may be via:
 ```
 git clone https://github.com/zxdavb/openwrt_custom_packages
 
