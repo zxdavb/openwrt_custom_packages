@@ -8,15 +8,15 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=lxc
-PKG_VERSION:=3.0.0
-PKG_RELEASE:=2
+PKG_VERSION:=3.1.0
+PKG_RELEASE:=1
 
 PKG_LICENSE:=LGPL-2.1+ BSD-2-Clause GPL-2.0
 PKG_MAINTAINER:=Marko Ratkaj <marko.ratkaj@sartura.hr>
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
 PKG_SOURCE_URL:=https://linuxcontainers.org/downloads/lxc/
-PKG_HASH:=6230224c27f050201b372b18a9f39cd220ed584899c5f0cf73c6b313dabc8d8a
+PKG_HASH:=4d8772c25baeaea2c37a954902b88c05d1454c91c887cb6a0997258cfac3fdc5
 
 PKG_BUILD_DEPENDS:=lua
 PKG_BUILD_PARALLEL:=1
@@ -44,7 +44,7 @@ DEPENDS_create = +lxc-configs +lxc-hooks +lxc-templates +flock
 define Package/lxc/Default
   SECTION:=utils
   CATEGORY:=Utilities
-  TITLE:=LXC userspace tools
+  TITLE:=LXC3 userspace tools
   URL:=http://lxc.sourceforge.net/
 endef
 

@@ -1,11 +1,11 @@
 --- a/src/lxc/confile_utils.c
 +++ b/src/lxc/confile_utils.c
-@@ -654,7 +654,7 @@ bool parse_limit_value(const char **valu
+@@ -739,7 +739,7 @@ bool parse_limit_value(const char **valu
  	char *endptr = NULL;
  
- 	if (strncmp(*value, "unlimited", sizeof("unlimited") - 1) == 0) {
+ 	if (strncmp(*value, "unlimited", STRLITERALLEN("unlimited")) == 0) {
 -		*res = RLIM_INFINITY;
 +		*res = (unsigned long)RLIM_INFINITY;
- 		*value += sizeof("unlimited") - 1;
+ 		*value += STRLITERALLEN("unlimited");
  		return true;
  	}
