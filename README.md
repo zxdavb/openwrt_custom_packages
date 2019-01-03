@@ -1,6 +1,9 @@
 # OpenWrt Custom Feed
 
-This is a custom feed for OpenWrt v18.06 packages.  Currently, it contains only **LXC v3.1.0** (OpenWrt 18.06 has LXC v2.1.0)
+This is a custom feed for OpenWrt v18.06 packages.
+
+## LXC v3.1.0
+Currently, it contains only **LXC v3.1.0** (OpenWrt 18.06 has LXC v2.1.0)
 
 To use it with your buildroot:
 **a)** add the custom feed to you feeds.conf
