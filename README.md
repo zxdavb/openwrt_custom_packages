@@ -20,4 +20,11 @@ EOF
 
 ./scripts/feeds update  -a
 ./scripts/feeds install -a
+
+./scripts/feeds uninstall lxc
+./scripts/feeds install -p customfeed lxc
+
+make defconfig  
 ```
+
+Props to **@mgschweidl** (at gitlab.com), and others, on whose work this is based.
