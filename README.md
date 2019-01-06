@@ -32,6 +32,8 @@ Props to **@mgschweidl** (at gitlab.com), and others, on whose work this is base
 
 Provided without explaination nor justification...
 
+NB: I have not install `luci-app-lxc`, nor `lxc-lua`.
+
 ```bash
   echo CONFIG_PACKAGE_lxc=y                                         >> .config
   echo CONFIG_LXC_KERNEL_OPTIONS=y                                  >> .config  # Enable kernel support for LXC
