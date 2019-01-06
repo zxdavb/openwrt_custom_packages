@@ -11,12 +11,10 @@ To use it with your buildroot:
 
 One way to achieve the above may be via:
 ```
-git clone https://github.com/zxdavb/openwrt_custom_packages
-
 cp feeds.conf.default feeds.conf
 
 cat >> feeds.conf << EOF
-src-link customfeed /../../openwrt_custom_packages
+src-git customfeed https://github.com/zxdavb/openwrt_custom_packages.git
 EOF
 
 ./scripts/feeds update  -a
